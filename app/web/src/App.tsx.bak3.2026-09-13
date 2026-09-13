@@ -2,14 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
 import type { Ecosystem, EnvParams, ReleaseReport, Species } from './types';
 import { HotBoard } from './components/HotBoard';
-import type { HotMeta } from './components/HotBoard';
 import { Tank } from './components/Tank';
 import { Workspace } from './components/Workspace';
-import { classifyQuestion, isExplanationType } from './lib/questionType';
-
-// 采集时间统一短格式：徽标空间只有一行，完整 locale 串会顶破顶栏
-const fmtCollected = (ts?: number) =>
-  ts ? new Date(ts).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '未知时间';
 
 export default function App() {
   const [status, setStatus] = useState<{ liveMode: boolean } | null>(null);
@@ -17,28 +11,10 @@ export default function App() {
   const [eco, setEco] = useState<Ecosystem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  // 热榜来源元信息由 HotBoard 上报，顶栏三态徽标需要它区分 实时/缓存/快照（spec 第 7 节）
-  const [hotMeta, setHotMeta] = useState<HotMeta | null>(null);
 
   useEffect(() => {
     api.status().then(setStatus).catch(() => setStatus({ liveMode: false }));
   }, []);
-
-  // 数据来源徽标三态（诚信要求）：「真实数据的历史缓存」和「虚构的演示数据」是两回事，
-  // 绝不能共用一个徽标。缸视图看 eco.cached，选题台视图看热榜 source/cached。
-  const badge = useMemo((): { text: string; cls: string } => {
-    if (!status?.liveMode) return { text: '演示数据集 · 未接入开放平台', cls: 'demo' };
-    if (view === 'tank' && eco) {
-      return eco.cached
-        ? { text: `缓存 · 采集于 ${fmtCollected(eco.createdAt)}`, cls: 'cache' }
-        : { text: '实时 · 知乎开放平台', cls: 'live' };
-    }
-    if (hotMeta?.source === 'snapshot') {
-      return { text: `热榜快照 · 采集于 ${fmtCollected(hotMeta.snapshotAt ?? hotMeta.fetchedAt)}`, cls: 'cache' };
-    }
-    if (hotMeta?.cached) return { text: `缓存 · 采集于 ${fmtCollected(hotMeta.fetchedAt)}`, cls: 'cache' };
-    return { text: '实时 · 知乎开放平台', cls: 'live' };
-  }, [status, view, eco, hotMeta]);
 
   const openTank = useCallback(async (question: string, url?: string) => {
     setLoading(true);
@@ -77,14 +53,16 @@ export default function App() {
               ← 返回选题台
             </button>
           )}
-          <span className={`source-badge ${badge.cls}`}>{badge.text}</span>
+          <span className={`source-badge ${status?.liveMode ? 'live' : 'demo'}`}>
+            {status?.liveMode ? '实时数据 · 知乎开放平台' : '演示数据 · 未接入开放平台'}
+          </span>
         </div>
       </header>
 
       {error && <div className="err" style={{ marginBottom: 14 }}>{error}</div>}
 
       {view === 'board' ? (
-        <HotBoard liveMode={status?.liveMode ?? false} loading={loading} onOpen={openTank} onMeta={setHotMeta} />
+        <HotBoard liveMode={status?.liveMode ?? false} loading={loading} onOpen={openTank} />
       ) : eco ? (
         <TankView eco={eco} onOpen={openTank} />
       ) : null}
@@ -111,18 +89,6 @@ function TankView({ eco, onOpen }: { eco: Ecosystem; onOpen: (q: string, url?: s
   }, [visible]);
 
   const isQa = (eco as { dataSource?: string }).dataSource === 'question_answers';
-  // annotationWarning 分情况措辞（附录 A3）：立场告警在归因/求解型问题上是误导——
-  // 那里多数回答中立可能完全正确；「维度不适用」不能说成「模型判不准」。
-  // 策略告警与判断型问题的立场告警一律原样显示服务端文案。
-  const qtype = classifyQuestion(eco.question);
-  const warnText = (() => {
-    const w = eco.annotationWarning;
-    if (!w) return null;
-    if (w.startsWith('立场') && isExplanationType(qtype)) {
-      return `本题为${qtype === 'why' ? '归因' : '求解'}型提问，回答以解释为主而非站队 —— 立场维度参考价值有限`;
-    }
-    return w;
-  })();
   const stanceCount = useMemo(() => {
     const m = new Map<string, number>();
     for (const s of visible) m.set(s.stance, (m.get(s.stance) || 0) + 1);
@@ -148,8 +114,6 @@ function TankView({ eco, onOpen }: { eco: Ecosystem; onOpen: (q: string, url?: s
             </div>
           </div>
         </div>
-        {/* 标注器自我诊断告警必须可见（spec 第 5 节）：出现即不可藏，措辞按问题类型分情况 */}
-        {warnText && <div className="warn-banner" style={{ marginBottom: 12 }}>⚠ {warnText}</div>}
         {eco.narrative && <div className="narrative">{eco.narrative}</div>}
         <Tank
           species={visible}

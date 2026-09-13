@@ -3,7 +3,6 @@ import type { Species, Stance, Strategy } from '../types';
 import { STANCES, STRATEGIES } from '../types';
 import { buildLayout } from '../lib/force';
 import type { VizNode } from '../lib/force';
-import { classifyQuestion, isExplanationType } from '../lib/questionType';
 
 const W = 880;
 const H = 540;
@@ -22,29 +21,6 @@ const TANK_STANCE: Record<Stance, { fill: string; stroke: string; text: string }
   反讽: { fill: 'rgba(146, 126, 232, 0.13)', stroke: '#B9AAEF', text: '#D2C9F6' }, // 紫 ~262°
   补充: { fill: 'rgba(216, 188, 110, 0.13)', stroke: '#E3CD8C', text: '#EFE0B4' }, // 琥珀 ~48°
 };
-
-// ---------- 生存策略配色（深色观测窗，色轴自适应用，附录 A1） ----------
-// 归因型 / 求解型问题的回答以解释为主、不站队，立场维度对它们不成立，
-// 渲染成一片灰既是视觉问题也是概念错误——换一个对这类问题成立的维度：按生存策略上色。
-// 六色色相间隔 ≥45°（12/60/120/180/240/300），与立场色同样低饱和半透明 + 亮描边；
-// 透明度分两档（0.20/0.14~0.16），色相难辨时仍能按明暗分组。
-const TANK_STRATEGY: Record<Strategy, { fill: string; stroke: string; text: string }> = {
-  数据论证: { fill: 'rgba(110, 130, 235, 0.20)', stroke: '#93A6EF', text: '#C0CBF8' }, // 蓝 ~240°
-  情绪共鸣: { fill: 'rgba(232, 120, 84, 0.20)', stroke: '#F09A80', text: '#F7C2AE' }, // 橙红 ~12°
-  故事叙事: { fill: 'rgba(210, 195, 110, 0.14)', stroke: '#E0D38C', text: '#EEE4B8' }, // 黄 ~60°
-  身份站队: { fill: 'rgba(90, 200, 120, 0.16)', stroke: '#8FD39A', text: '#B8E6C2' }, // 绿 ~120°
-  抖机灵: { fill: 'rgba(70, 200, 185, 0.14)', stroke: '#7FD8CE', text: '#AAE8E0' }, // 青 ~180°
-  引用权威: { fill: 'rgba(200, 110, 195, 0.16)', stroke: '#DF9ADA', text: '#EFC2EA' }, // 品红 ~300°
-};
-
-// 零证据策略判定（附录 A2）：标注器对完全没命中策略特征的回答会兜底给「数据论证」，
-// 前端不能把兜底值当成真实判定渲染——evidence.strategy 为空或首条是「特征不足」即为未识别。
-// demo 预设标签不是机器判定，不参与此判定（演示缸应如实展示预设标签本身）。
-export function isStrategyUnidentified(s: Species): boolean {
-  if (s.annotationSource === 'demo') return false;
-  const ev = s.evidence?.strategy ?? [];
-  return ev.length === 0 || ev[0].term === '特征不足';
-}
 
 // 权威等级 → 描边粗细（第四维编码）：1 / 1.4 / 2 / 2.8px，
 // 大 V 在缸里一眼可辨，不需要读文字。
@@ -177,24 +153,6 @@ export function Tank({
     return nodes.reduce((a, b) => ((b.votes ?? -1) > (a.votes ?? -1) ? b : a));
   }, [nodes]);
 
-  // 色轴自适应（附录 A1）：归因/求解型问题的回答在解释而非站队，
-  // 立场维度对它们不成立——这类缸的节点颜色改用生存策略编码，
-  // 不是把灰数据藏起来，而是换一个对这类问题成立的维度。
-  const qtype = classifyQuestion(question);
-  const byStrategy = isExplanationType(qtype);
-  // 策略未识别的节点在策略色轴下没有可编码的值，回落为无彩色（中立色），
-  // 与虚线外描边一起表达「这条我判不了」。
-  const colorOf = (n: Species) =>
-    byStrategy
-      ? isStrategyUnidentified(n)
-        ? TANK_STANCE.中立
-        : TANK_STRATEGY[n.strategy]
-      : TANK_STANCE[n.stance];
-
-  const unidentifiedCount = useMemo(() => nodes.filter(isStrategyUnidentified).length, [nodes]);
-  // 是否有按热序近似的节点：决定图例是否解释「虚线内环」
-  const hasApprox = useMemo(() => nodes.some((n) => n.votes == null), [nodes]);
-
   if (!species.length) {
     return (
       <div className="tank-svg-wrap">
@@ -205,12 +163,6 @@ export function Tank({
 
   return (
     <div>
-      {/* 色轴说明（附录 A1）：归因/求解型问题不预设对立立场，颜色编码对象换了必须讲清楚 */}
-      {byStrategy && (
-        <div className="axis-note">
-          本题为{qtype === 'why' ? '归因' : '求解'}型提问，不预设对立立场 —— 颜色按生存策略编码
-        </div>
-      )}
       <div className="tank-svg-wrap">
         <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={`${question} 的观点生态缸`}>
           <title>观点生态缸</title>
@@ -245,8 +197,7 @@ export function Tank({
           })}
 
           {tweened.map((n) => {
-            const unid = isStrategyUnidentified(n);
-            const c = colorOf(n);
+            const c = TANK_STANCE[n.stance];
             const isSel = selected?.id === n.id;
             const showTag = top3.has(n.id) || isSel || hovered === n.id;
             // 权威等级映射到描边档位，超出 1–4 的值收敛到端点，避免异常数据画爆
@@ -255,11 +206,6 @@ export function Tank({
             // 小圆（r<26）内不放任何文字：原来小圆塞「中立」两字直接溢出圆外，
             // 改为只放策略符号；文字只在圆够大时出现
             const hasText = n.r >= 26;
-            // 无公开赞同数的节点：半径是热序近似值而非真实赞同换算，
-            // 加一道低透明度细虚线内环让两种量纲在视觉上可区分（spec 第 2 节）
-            const approx = n.votes == null;
-            // 低置信（<0.15）：不是错误是不确定，用空心小问号，不用红色（spec 第 3 节）
-            const lowConf = n.confidence < 0.15;
             return (
               <g
                 key={n.id}
@@ -277,44 +223,9 @@ export function Tank({
                   fill={c.fill}
                   stroke={isSel ? '#FFFFFF' : c.stroke}
                   strokeWidth={sw}
-                  // 未识别策略的节点外描边改细虚线（附录 A2）：如实表达「这条判不了」，
-                  // 与「无赞同数」的内环区分——外描边 vs 内环
-                  strokeDasharray={unid ? '4 4' : undefined}
                 />
-                {approx && n.r > 12 && (
-                  <circle
-                    cx={n.x}
-                    cy={n.y}
-                    r={n.r - 5}
-                    fill="none"
-                    stroke={c.stroke}
-                    strokeWidth={1}
-                    strokeOpacity={0.5}
-                    strokeDasharray="3 3"
-                    pointerEvents="none"
-                  />
-                )}
-                {/* 圆内符号：立场色轴画策略符号（未识别则留空，不画兜底假符号）；
-                    策略色轴下符号位改为立场首字（仅立场非中立时），策略名由文字位承担 */}
-                {!unid &&
-                  (byStrategy ? (
-                    n.stance !== '中立' && (
-                      <text
-                        x={n.x}
-                        y={hasText ? n.y - n.r * 0.26 : n.y}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fontSize={12}
-                        fill={c.stroke}
-                        fontWeight={500}
-                      >
-                        {n.stance[0]}
-                      </text>
-                    )
-                  ) : (
-                    <StrategyGlyph s={n.strategy} x={n.x} y={hasText ? n.y - n.r * 0.26 : n.y} color={c.stroke} />
-                  ))}
-                {hasText && !(byStrategy && unid) && (
+                <StrategyGlyph s={n.strategy} x={n.x} y={hasText ? n.y - n.r * 0.26 : n.y} color={c.stroke} />
+                {hasText && (
                   <text
                     x={n.x}
                     y={n.y + n.r * 0.3}
@@ -324,23 +235,15 @@ export function Tank({
                     fill={c.text}
                     fontWeight={500}
                   >
-                    {byStrategy ? n.strategy : n.stance}
+                    {n.stance}
                   </text>
-                )}
-                {lowConf && (
-                  <g pointerEvents="none">
-                    <circle cx={n.x + n.r * 0.72} cy={n.y - n.r * 0.72} r={6} fill="#0D1B2E" stroke="#8FA3BD" strokeWidth={1} />
-                    <text x={n.x + n.r * 0.72} y={n.y - n.r * 0.72} textAnchor="middle" dominantBaseline="central" fontSize={9} fill="#8FA3BD">
-                      ?
-                    </text>
-                  </g>
                 )}
                 {showTag && (
                   <text className="node-tag" x={n.x} y={n.y + n.r + 16} textAnchor="middle" fontSize={11.5} fill="#8FA3BD">
-                    {unid ? '未识别' : n.strategy} · {n.votes ?? '热序'}
+                    {n.strategy} · {n.votes ?? '热序'}
                   </text>
                 )}
-                <title>{`【${n.stance} · ${unid ? '未识别' : n.strategy}】${n.author}\n${n.summary || n.excerpt.slice(0, 80)}\n赞同 ${n.votes ?? '（按热序近似）'} · 评论 ${n.comments} · 权威等级 ${n.authority}`}</title>
+                <title>{`【${n.stance} · ${n.strategy}】${n.author}\n${n.summary || n.excerpt.slice(0, 80)}\n赞同 ${n.votes ?? '（按热序近似）'} · 评论 ${n.comments} · 权威等级 ${n.authority}`}</title>
               </g>
             );
           })}
@@ -362,54 +265,25 @@ export function Tank({
               优势 <b>{dominant.stance}·{dominant.strategy}</b>
             </span>
           )}
-          {/* 未识别计数显性化（附录 A2）：能诚实说「判不了」的模型比硬塞进六个格子的更可信 */}
-          {unidentifiedCount > 0 && (
-            <span className="hud-chip">
-              未识别 <b>{unidentifiedCount}</b>
-            </span>
-          )}
           {resolved.some((l) => l.kind === 'rival') && <span className="hud-chip">虚线 = 对立竞争</span>}
         </div>
 
-        {/* 图例与节点编码同步：主标题说明当前颜色编码的维度（随问题类型自适应），
-            色块与符号都要能在这里查到 */}
+        {/* 图例与节点编码同步：立场色 + 策略符号都要能在这里查到 */}
         <div className="legend">
-          <span className="legend-title">{byStrategy ? '颜色 = 生存策略（本题不预设对立立场）' : '颜色 = 观点立场'}</span>
-          {(byStrategy ? STRATEGIES : STANCES).map((s) => {
-            const c = byStrategy ? TANK_STRATEGY[s as Strategy] : TANK_STANCE[s as Stance];
-            return (
-              <span key={s}>
-                <i style={{ background: c.fill, borderColor: c.stroke }} />
-                {s}
-              </span>
-            );
-          })}
-          {!byStrategy &&
-            STRATEGIES.map((s) => (
-              <span key={s}>
-                <svg width="12" height="12" viewBox="0 0 14 14" style={{ display: 'block' }}>
-                  <StrategyGlyph s={s} x={7} y={7} color="#8FA3BD" />
-                </svg>
-                {s}
-              </span>
-            ))}
-          {hasApprox && (
-            <span>
-              <svg width="14" height="14" viewBox="0 0 14 14" style={{ display: 'block' }}>
-                <circle cx="7" cy="7" r="5.5" fill="none" stroke="#8FA3BD" strokeWidth="1" strokeDasharray="2.5 2.5" />
-                <circle cx="7" cy="7" r="2.5" fill="none" stroke="#8FA3BD" strokeWidth="1" strokeDasharray="2 2" strokeOpacity="0.6" />
-              </svg>
-              虚线内环 = 无公开赞同数，按热序近似
+          {STANCES.map((s) => (
+            <span key={s}>
+              <i style={{ background: TANK_STANCE[s].fill, borderColor: TANK_STANCE[s].stroke }} />
+              {s}
             </span>
-          )}
-          {unidentifiedCount > 0 && (
-            <span>
-              <svg width="14" height="14" viewBox="0 0 14 14" style={{ display: 'block' }}>
-                <circle cx="7" cy="7" r="5.5" fill="none" stroke="#8FA3BD" strokeWidth="1.2" strokeDasharray="3 3" />
+          ))}
+          {STRATEGIES.map((s) => (
+            <span key={s}>
+              <svg width="12" height="12" viewBox="0 0 14 14" style={{ display: 'block' }}>
+                <StrategyGlyph s={s} x={7} y={7} color="#8FA3BD" />
               </svg>
-              虚线外描边 = 未识别出显著生存策略
+              {s}
             </span>
-          )}
+          ))}
           <span className="note">圆面积 = 能量 · 描边粗细 = 权威等级 · 点击物种查看详情</span>
         </div>
       </div>
@@ -418,16 +292,14 @@ export function Tank({
         <div className="detail-card">
           <div>
             <div className="name">
-              【{selected.stance} · {isStrategyUnidentified(selected) ? '未识别' : selected.strategy}】{selected.summary || '（未标注）'}
+              【{selected.stance} · {selected.strategy}】{selected.summary || '（未标注）'}
               <span style={{ fontWeight: 400, color: 'var(--ink-3)' }}>　— {selected.author}</span>
-              {selected.confidence < 0.15 && <span className="badge-warn" style={{ marginLeft: 8 }}>低置信</span>}
             </div>
             <p>{selected.excerpt}</p>
             <div className="meta-line">
               赞同 {selected.votes ?? '（按热序近似）'} · 评论 {selected.comments} · 发布/编辑 {selected.editTime > 0 ? new Date(selected.editTime * 1000).toLocaleDateString('zh-CN') : '未知'} · 权威等级 {selected.authority}
               {selected.badgeText ? ` · ${selected.badgeText}` : ''}
             </div>
-            <EvidenceBlock s={selected} />
             {selected.featuredComments.length > 0 && (
               <div style={{ marginTop: 10 }}>
                 {selected.featuredComments.slice(0, 2).map((c, i) => (
@@ -442,76 +314,6 @@ export function Tank({
             </a>
           </div>
         </div>
-      )}
-    </div>
-  );
-}
-
-// ---------- 判定依据（可解释标注，spec 第 3 节） ----------
-// 这是产品最重要的差异化：每条标注都能追问「凭什么这么判」——
-// 命中词 + 权重 + 按权重成比例的细条（纯色描边风格，不用渐变）。
-function EvidenceBlock({ s }: { s: Species }) {
-  const unid = isStrategyUnidentified(s);
-  const srcLabel =
-    s.annotationSource === 'demo'
-      ? '演示预设标签 · 非机器判定'
-      : s.annotationSource === 'none'
-        ? '标注缺失 · 无判定来源'
-        : '本地可解释模型 · 零 API 消耗';
-  // 「特征不足」是标注器的兜底占位词，不是真实命中词，不应带权重条展示
-  const stanceEv = (s.evidence?.stance ?? []).filter((e) => e.term !== '特征不足').slice(0, 5);
-  const strategyEv = (s.evidence?.strategy ?? []).filter((e) => e.term !== '特征不足').slice(0, 5);
-  return (
-    <div className="evidence-block">
-      <div className="ev-head">
-        <span>判定依据</span>
-        <span className="ev-src">{srcLabel}</span>
-      </div>
-      <EvidenceRow label={`立场「${s.stance}」`} items={stanceEv} emptyText="（无显著立场信号）" />
-      {unid ? (
-        <div className="ev-row">
-          <span className="ev-label">策略</span>
-          <span className="ev-empty">未识别（无显著策略特征）</span>
-        </div>
-      ) : (
-        <EvidenceRow label={`策略「${s.strategy}」`} items={strategyEv} emptyText="（无显著策略特征）" />
-      )}
-      {/* 低置信文案要诚实：回落中立是模型保守策略，不是在断言该回答真的中立 */}
-      {s.confidence < 0.15 && (
-        <div className="ev-lowconf">特征不足，已回落为中立 · 不代表该回答真的中立</div>
-      )}
-    </div>
-  );
-}
-
-function EvidenceRow({
-  label,
-  items,
-  emptyText,
-}: {
-  label: string;
-  items: { term: string; weight: number }[];
-  emptyText: string;
-}) {
-  // 权重条按行内最大权重归一：条长只在同一行内可比，不跨行误导
-  const maxW = Math.max(0.0001, ...items.map((e) => e.weight));
-  return (
-    <div className="ev-row">
-      <span className="ev-label">{label}</span>
-      {items.length === 0 ? (
-        <span className="ev-empty">{emptyText}</span>
-      ) : (
-        <span className="ev-items">
-          {items.map((e, i) => (
-            <span className="ev-item" key={i}>
-              <b>{e.term}</b>
-              <span className="ev-w">{e.weight}</span>
-              <span className="ev-bar">
-                <i style={{ width: `${Math.round((e.weight / maxW) * 100)}%` }} />
-              </span>
-            </span>
-          ))}
-        </span>
       )}
     </div>
   );

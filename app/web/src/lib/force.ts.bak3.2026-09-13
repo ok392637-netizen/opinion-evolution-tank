@@ -23,11 +23,7 @@ export function computeEnergy(
   const times = all.map((x) => x.editTime).filter((t) => t > 0).sort((a, b) => a - b);
   const recencyRank = times.length > 1 ? 1 - times.indexOf(s.editTime) / (times.length - 1) : 0.5;
 
-  // 两种来源量纲不同，必须各自归一化到 0..1 再进同一个能量公式：
-  // 原实现把赞同数原值（可达数百）和热序归一值（0~1）混在一起，
-  // maxEnergy 被赞同数顶到几百，未富化节点 √(1/880)≈0.034，半径全贴下限。
-  // 有赞同数的节点之间仍是线性缩放，相对大小关系不变（真实数据保真）。
-  const votesPart = s.votes != null ? s.votes / maxVotes : (s.heatRank ?? 0) / maxHeat; // 无赞同数时按热序近似
+  const votesPart = s.votes ?? (s.heatRank ?? 0) / maxHeat; // 无赞同数时按热序近似
   let energy = params.rankMode === 'votes' ? votesPart : recencyRank;
 
   const emotional = ['情绪共鸣', '故事叙事', '抖机灵'].includes(s.strategy);

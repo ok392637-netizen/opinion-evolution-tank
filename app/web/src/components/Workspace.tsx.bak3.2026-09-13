@@ -50,59 +50,6 @@ export function Workspace({
         )}
         {tab === 'report' && <ReportPanel eco={eco} release={release} />}
       </div>
-      {/* AI 生态解说常驻右栏底部（spec 第 4 节）：四个 tab 之外的常驻区块，
-          填掉 1440 下右栏空白；三种状态都如实展示，没有解说也不隐藏 */}
-      <NarrativeBlock eco={eco} />
-    </div>
-  );
-}
-
-// ---------- AI 生态解说（知乎直答整缸解说，与逐条标注互为独立路径） ----------
-
-function NarrativeBlock({ eco }: { eco: Ecosystem }) {
-  const src = eco.aiNarrativeSource || 'zhida-thinking-1p5';
-  return (
-    <div className="panel-card narrative-block">
-      <div className="panel-title">
-        <span>AI 生态解说</span>
-        <span className="badge-info">知乎直答 · {src}</span>
-      </div>
-      {eco.aiFactions && eco.aiFactions.length > 0 ? (
-        <>
-          {/* 派系序号用大号 tabular-nums，与热榜列表的编号风格一致 */}
-          {eco.aiFactions.map((f, i) => (
-            <div className="faction" key={i}>
-              <span className="faction-idx">{String(i + 1).padStart(2, '0')}</span>
-              <div className="faction-body">
-                <div className="faction-name">{f.name}</div>
-                <div className="faction-claim">代表观点：{f.claim}</div>
-                <div className="faction-persuasion">说服方式：{f.persuasion}</div>
-              </div>
-            </div>
-          ))}
-          {eco.aiDominant && (
-            <div className="faction-dominant">
-              <span className="ev-label">谁占上风</span>
-              {eco.aiDominant}
-            </div>
-          )}
-          {/* 双通道叙事是产品说明的核心，这行小字不要删 */}
-          <p className="tiny-note">由知乎直答生成 · 与左侧逐条标注为两条独立路径，可互相印证</p>
-        </>
-      ) : eco.aiNarrative ? (
-        <>
-          {/* 原文独立于结构解析：解析未命中时仍展示已取得的解说，不丢内容 */}
-          <div className="badge-warn" style={{ marginBottom: 8 }}>AI 解说原文（结构解析未命中）</div>
-          <div className="narrative-raw">{eco.aiNarrative}</div>
-          <p className="tiny-note">由知乎直答生成 · 与左侧逐条标注为两条独立路径，可互相印证</p>
-        </>
-      ) : (
-        <>
-          {/* 直答额度极稀缺（2 次/日）：如实说明缺省原因，不用假内容填充 */}
-          <div className="narrative-empty">今日直答额度已用尽，本缸暂无 AI 生态解说。左侧逐条标注不受影响。</div>
-          {eco.aiNarrativeError && <div className="ev-empty" style={{ marginTop: 6 }}>原因：{eco.aiNarrativeError}</div>}
-        </>
-      )}
     </div>
   );
 }

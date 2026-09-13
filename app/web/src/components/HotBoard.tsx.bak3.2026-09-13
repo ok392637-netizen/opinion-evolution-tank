@@ -2,66 +2,32 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import type { HotItem } from '../types';
 
-// 热榜来源元信息：上报给 App 顶栏做三态数据来源徽标（spec 第 7 节）
-export interface HotMeta {
-  source?: 'live' | 'demo' | 'snapshot';
-  cached?: boolean;
-  fetchedAt?: number;
-  snapshotAt?: number;
-}
-
-// 从知乎问题链接提取问题 id：已就绪缸匹配优先按 id，比字符串全等更抗格式漂移
-const questionIdOf = (url: string) => url.match(/zhihu\.com\/question\/(\d+)/)?.[1] ?? null;
-
 export function HotBoard({
   liveMode,
   loading,
   onOpen,
-  onMeta,
 }: {
   liveMode: boolean;
   loading: boolean;
   onOpen: (q: string, url?: string) => void;
-  onMeta?: (m: HotMeta) => void;
 }) {
   const [items, setItems] = useState<HotItem[]>([]);
   const [warning, setWarning] = useState('');
   const [query, setQuery] = useState('');
   const [err, setErr] = useState('');
   const [fetching, setFetching] = useState(true);
-  // 已就绪缸的问题 id 集合：命中的热榜条目加「缸已就绪」徽标并排最前（spec 第 6 节）
-  const [readyIds, setReadyIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setFetching(true);
-    // 热榜与已就绪清单并行请求；/api/tanks 失败时静默降级——
-    // 不显示徽标、不改排序、不报错，不能因为辅助接口挂掉拖累主流程
-    api
-      .tanks()
-      .then((list) => {
-        setReadyIds(new Set(list.map((t) => questionIdOf(t.url)).filter((x): x is string => !!x)));
-      })
-      .catch(() => {});
     api
       .hot()
       .then((d) => {
         setItems(d.items);
-        setWarning(d.warning || '');
-        onMeta?.({ source: d.source, cached: d.cached, fetchedAt: d.fetchedAt, snapshotAt: d.snapshotAt });
+        setWarning((d as { warning?: string }).warning || '');
       })
       .catch((e) => setErr((e as Error).message))
       .finally(() => setFetching(false));
-    // onMeta 是 App 传入的 setState，引用稳定，无需进依赖
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const isReady = (it: HotItem) => {
-    const id = questionIdOf(it.url);
-    return id !== null && readyIds.has(id);
-  };
-  // 已就绪条目排到最前：评委零额度也能点开秒出，这是评审路径的主入口
-  const sortedItems = [...items].sort((a, b) => Number(isReady(b)) - Number(isReady(a)));
-  const readyCount = items.filter(isReady).length;
 
   const submit = () => {
     const q = query.trim();
@@ -114,7 +80,6 @@ export function HotBoard({
         <h3>热榜选题</h3>
         <span className="hint">
           {liveMode ? '来自知乎热榜 · 服务端缓存 12 小时' : '演示数据 · 配置 Access Secret 后切换实时热榜'}
-          {readyCount > 0 && ' · 标「缸已就绪」的问题为赛前预构建，点开秒出、不消耗接口额度'}
         </span>
       </div>
 
@@ -122,14 +87,11 @@ export function HotBoard({
         <div className="loading">正在获取热榜…</div>
       ) : (
         <div className="hot-list">
-          {sortedItems.map((it, i) => (
+          {items.map((it, i) => (
             <div className="hot-row" key={i}>
               <div className="hot-rank">{String(i + 1).padStart(2, '0')}</div>
               <div className="hot-main">
-                <div className="hot-title">
-                  {it.title}
-                  {isReady(it) && <span className="ready-badge">缸已就绪</span>}
-                </div>
+                <div className="hot-title">{it.title}</div>
                 <div className="hot-summary">{it.summary || '（无摘要）'}</div>
               </div>
               <div className="hot-actions">

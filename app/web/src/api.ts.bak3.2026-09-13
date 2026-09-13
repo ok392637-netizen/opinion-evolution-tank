@@ -15,11 +15,8 @@ export const api = {
   status: () => fetch('/api/status').then((r) => json<Status>(r)),
   hot: () =>
     fetch('/api/hot').then((r) =>
-      // source 可能是 'snapshot'（真实历史快照）——服务端兜底链原样透传，前端必须能接住
-      json<{ items: HotItem[]; source: 'live' | 'demo' | 'snapshot'; fetchedAt?: number; cached?: boolean; snapshotAt?: number; warning?: string }>(r),
+      json<{ items: HotItem[]; source: 'live' | 'demo'; fetchedAt: number; cached?: boolean }>(r),
     ),
-  // 已就绪缸清单（含赛前预构建缸）：点它们走缓存，不消耗接口额度
-  tanks: () => fetch('/api/tanks').then((r) => json<{ question: string; url: string; speciesCount: number }[]>(r)),
   ecosystem: (question: string, url?: string) =>
     fetch('/api/ecosystem', {
       method: 'POST',
