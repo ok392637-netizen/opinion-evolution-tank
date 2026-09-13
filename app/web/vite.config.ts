@@ -6,7 +6,8 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://localhost:8787',
+      // 本 worktree 的后端跑在 8788（主仓是 8787），spec 明确允许且必须改这一处
+      '/api': 'http://localhost:8788',
     },
   },
 });

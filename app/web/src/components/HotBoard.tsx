@@ -52,6 +52,13 @@ export function HotBoard({
         <p>
           赞同是能量，评论是繁殖，折叠是灭绝，热榜是气候突变。高赞回答不一定是正确的，而是最适应生态位的那个物种——我们把它可视化给你看。
         </p>
+        {/* 三个能力锚点：评委只有 3 分钟，要让他们在滚动前就知道产品能做什么；
+            用细描边分隔的横排，不抢 hero 主张的视觉层级 */}
+        <div className="hero-caps">
+          <span>观点物种识别</span>
+          <span>演化时间轴重建</span>
+          <span>放生存活预测</span>
+        </div>
       </section>
 
       <div className="searchbar">
