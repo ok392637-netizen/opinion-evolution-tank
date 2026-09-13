@@ -86,7 +86,10 @@ export function buildLayout(
   // 边界收拢
   for (const n of nodes) {
     n.x = Math.max(n.r + 12, Math.min(width - n.r - 12, n.x));
-    n.y = Math.max(n.r + 34, Math.min(height - n.r - 12, n.y));
+    // 底部预留从 12 提到 84：图例条（立场 6 项 + 策略 6 项会折成两行，约 62px）
+    // 绝对定位压在画布底部，Top3 标签又画在圆下方 r+16 处，
+    // 余量太小会让节点和标签一起沉到图例底下（纯布局参数，能量公式未动）
+    n.y = Math.max(n.r + 34, Math.min(height - n.r - 84, n.y));
   }
   return { nodes, links };
 }

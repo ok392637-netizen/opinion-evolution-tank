@@ -237,8 +237,13 @@ function Gauge({ p }: { p: number }) {
     <svg width="80" height="80" viewBox="0 0 80 80" style={{ flex: 'none' }} role="img" aria-label={`存活概率 ${p}%`}>
       <path d={arcPath(1)} fill="none" stroke="rgba(24,34,46,0.1)" strokeWidth="6" strokeLinecap="round" />
       <path d={arcPath(p / 100)} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" />
-      <text x="40" y="42" textAnchor="middle" dominantBaseline="central" fontSize="16" fontWeight="500" fill={color}>
+      {/* 概率数字放大到 28px：它是整张报告卡的视觉锚点，原来的 16px 撑不起层级 */}
+      <text className="prob-num" x="40" y="40" textAnchor="middle" dominantBaseline="central" fontSize="28" fontWeight="500" fill={color}>
         {p}%
+      </text>
+      {/* 3/4 圆弧的缺口正好在底部，把「存活概率」标注放进去，不额外占布局高度 */}
+      <text x="40" y="72" textAnchor="middle" fontSize="10" fill="#9AA2AD">
+        存活概率
       </text>
     </svg>
   );
@@ -250,9 +255,17 @@ function ReportCard({ report }: { report: ReleaseReport }) {
       <div className="gauge-row">
         <Gauge p={report.survivalProbability} />
         <div style={{ minWidth: 0 }}>
-          <div className="prob-label">
-            存活概率 · AI {report.aiProbability !== null ? report.aiProbability : '—'} : 规则 {report.ruleProbability} 按 6:4 混合
+          {/* 「6:4 混合」从一行灰字改成两段式小条形：混合比例是这套预测的
+              核心卖点，必须可视化，而不是埋在注释里被忽略 */}
+          <div className="mix-bar" role="img" aria-label={`AI 概率 ${report.aiProbability ?? '—'} 与规则概率 ${report.ruleProbability} 按 6:4 混合`}>
+            <span className="seg-ai" style={{ width: '60%' }}>
+              AI {report.aiProbability !== null ? report.aiProbability : '—'}
+            </span>
+            <span className="seg-rule" style={{ width: '40%' }}>
+              规则 {report.ruleProbability}
+            </span>
           </div>
+          <div className="prob-label">AI : 规则 = 6 : 4 混合</div>
           <div className="verdict">{report.narrative}</div>
           <div style={{ marginTop: 8 }}>
             <span className="badge-info">
@@ -268,7 +281,8 @@ function ReportCard({ report }: { report: ReleaseReport }) {
       {report.risks.length > 0 && (
         <div className="report-block">
           <div className="bt">风险</div>
-          <ul className="report-list">
+          {/* 左侧 2px 暖色条：风险条目在列表层面就能被一眼认出 */}
+          <ul className="report-list strip">
             {report.risks.map((r, i) => (
               <li key={i}>{r}</li>
             ))}
@@ -288,7 +302,8 @@ function ReportCard({ report }: { report: ReleaseReport }) {
       {report.hybridAdvice.length > 0 && (
         <div className="report-block">
           <div className="bt">杂交建议（提升存活率）</div>
-          <ul className="report-list">
+          {/* 左侧 2px 主色条：与风险（暖色）形成「警示 / 引导」的色彩分工 */}
+          <ul className="report-list strip advice">
             {report.hybridAdvice.map((a, i) => (
               <li key={i}>{a}</li>
             ))}

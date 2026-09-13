@@ -16,19 +16,29 @@
   --tank-text: #dfe7f2;
   --tank-dim: #8fa3bd;
   --danger: #a8432a;
+  --risk: #c05b3a;
   --radius: 14px;
   --radius-sm: 10px;
+  /* 四级字阶：当前最大短板是所有字号差不多，评委 5 秒内读不到层级。
+     Display / Title / Body / Meta 拉开对比后，「仪器感」先由排版建立。 */
+  --fs-display: clamp(30px, 4vw, 46px);
+  --fs-title: 22px;
+  --fs-body: 14px;
+  --fs-meta: 11.5px;
 }
 
 * { box-sizing: border-box; }
+
+/* 任何宽度下都不许横向滚动（spec 4.8 硬性要求），用 clip 兜底 */
+html, body { overflow-x: clip; }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
   font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
-  font-size: 14px;
-  line-height: 1.65;
+  font-size: var(--fs-body);
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -36,7 +46,13 @@ h1, h2, h3 { font-weight: 500; margin: 0; letter-spacing: 0.2px; }
 button { font-family: inherit; }
 ::selection { background: var(--primary-ring); }
 
-.app { max-width: 1240px; margin: 0 auto; padding: 0 28px 56px; }
+/* 数据产品的可信感一半来自数字排版：所有计数/概率/序号统一等宽数字 + 提一档字重 */
+.hot-rank, .prob-num, .stat-chip b, .hud-chip b, .timeline-meta, .mix-bar {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 内容区放宽到 1320：观测窗要做绝对主角，需要尽量吃满横向空间 */
+.app { max-width: 1320px; margin: 0 auto; padding: 0 28px 56px; }
 
 /* ---------- 顶栏 ---------- */
 .topbar {
@@ -90,9 +106,10 @@ button { font-family: inherit; }
 .btn.primary:hover { background: var(--primary-deep); border-color: var(--primary-deep); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
-.searchbar { display: flex; gap: 10px; margin: 20px 0 8px; }
+.searchbar { display: flex; gap: 10px; margin: 22px 0 8px; }
 .searchbar input {
   flex: 1;
+  min-width: 0;
   border: 1px solid var(--line-strong);
   border-radius: 12px;
   padding: 12px 16px;
@@ -106,25 +123,49 @@ button { font-family: inherit; }
 .searchbar input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-ring); }
 
 /* ---------- 选题台 ---------- */
-.hero { padding: 26px 0 6px; }
-.hero h2 { font-size: 30px; line-height: 1.35; letter-spacing: 0.5px; }
-.hero p { color: var(--ink-2); font-size: 14.5px; margin: 10px 0 0; max-width: 640px; }
+/* hero 主张拉到 Display 级：评委只有 3 分钟，第一屏必须先声夺人 */
+.hero { padding: 34px 0 6px; }
+.hero h2 {
+  font-size: var(--fs-display);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+}
+.hero p { color: var(--ink-2); font-size: 14.5px; margin: 14px 0 0; max-width: 46em; }
 .hero .kicker {
   font-size: 12px;
   letter-spacing: 3px;
   color: var(--primary);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
+
+/* 三个能力锚点：让评委在滚动前就知道产品有什么；细描边分隔，不抢 hero 的戏 */
+.hero-caps {
+  display: flex;
+  margin: 24px 0 2px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-2);
+}
+.hero-caps span {
+  flex: 1;
+  text-align: center;
+  padding: 13px 10px;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--ink-2);
+}
+.hero-caps span + span { border-left: 1px solid var(--line); }
 
 .section-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin: 34px 0 14px;
+  margin: 36px 0 14px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
 }
-.section-head h3 { font-size: 15px; }
+.section-head h3 { font-size: 20px; }
 .section-head .hint { font-size: 12px; color: var(--ink-3); }
 
 .hot-list { display: flex; flex-direction: column; }
@@ -133,18 +174,18 @@ button { font-family: inherit; }
   grid-template-columns: 52px minmax(0, 1fr) auto;
   gap: 16px;
   align-items: center;
-  padding: 15px 14px;
+  min-height: 72px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--line);
   border-left: 2px solid transparent;
   transition: background 0.15s, border-color 0.15s;
 }
 .hot-row:hover { background: var(--panel-2); border-left-color: var(--primary); }
 .hot-rank {
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 500;
   color: var(--ink-3);
   text-align: center;
-  font-variant-numeric: tabular-nums;
 }
 .hot-row:nth-child(-n + 3) .hot-rank { color: var(--primary); }
 .hot-main { min-width: 0; }
@@ -161,11 +202,15 @@ button { font-family: inherit; }
 .hot-link:hover { color: var(--primary); }
 
 /* ---------- 生态缸页布局 ---------- */
+/* ≥1280 并排；768–1279 上下堆叠（spec 4.8 断点要求） */
 .tank-layout { display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 18px; align-items: start; }
-@media (max-width: 1040px) { .tank-layout { grid-template-columns: 1fr; } }
+@media (max-width: 1279px) {
+  .tank-layout { grid-template-columns: 1fr; }
+  .panel { position: static; }
+}
 
 .tank-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 12px; }
-.tank-head .q { font-size: 18px; font-weight: 500; line-height: 1.4; }
+.tank-head .q { font-size: var(--fs-title); font-weight: 500; line-height: 1.4; }
 .tank-stats { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 .stat-chip {
   font-size: 12px;
@@ -188,32 +233,51 @@ button { font-family: inherit; }
   color: var(--ink-2);
 }
 
-/* ---------- 深色生态缸画布 ---------- */
+/* ---------- 深色观测窗 ---------- */
+/* 观测窗是绝对主角：上下留呼吸区，锐角 + 细描边 + 四角刻度线 = 仪器取景框，
+   不是圆角卡片。圆角从 16px 收到 3px，刻意制造「设备」气质。 */
 .tank-svg-wrap {
   position: relative;
-  border: 1px solid rgba(13, 27, 46, 0.6);
-  border-radius: 16px;
+  margin: 18px 0 4px;
+  border: 1px solid rgba(13, 27, 46, 0.85);
+  border-radius: 3px;
   overflow: hidden;
   background: var(--tank-bg);
+  box-shadow: 0 1px 0 rgba(13, 27, 46, 0.05), 0 16px 36px -22px rgba(13, 27, 46, 0.45);
 }
 .tank-svg-wrap svg { display: block; }
 
+/* 取景框四角刻度线：纯装饰，pointer-events 关掉避免挡节点点击 */
+.tank-frame { position: absolute; inset: 0; pointer-events: none; }
+.tank-frame i {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border: 0 solid rgba(148, 178, 216, 0.6);
+}
+.tank-frame i.tl { top: 9px; left: 9px; border-top-width: 1.5px; border-left-width: 1.5px; }
+.tank-frame i.tr { top: 9px; right: 9px; border-top-width: 1.5px; border-right-width: 1.5px; }
+.tank-frame i.bl { bottom: 9px; left: 9px; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+.tank-frame i.br { bottom: 9px; right: 9px; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+
+/* HUD 芯片贴边悬浮：缩小、压扁、更透，把画面中心让给节点 */
 .hud {
   position: absolute;
-  top: 14px;
-  left: 14px;
+  top: 10px;
+  left: 10px;
+  right: 10px;
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   pointer-events: none;
 }
 .hud-chip {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--tank-text);
-  background: rgba(9, 18, 31, 0.62);
-  border: 1px solid rgba(148, 178, 216, 0.22);
+  background: rgba(9, 18, 31, 0.55);
+  border: 1px solid rgba(148, 178, 216, 0.2);
   border-radius: 999px;
-  padding: 4px 12px;
+  padding: 3px 10px;
 }
 .hud-chip b { color: #9cc0f5; font-weight: 500; }
 
@@ -223,8 +287,8 @@ button { font-family: inherit; }
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 10px 16px;
-  font-size: 11.5px;
+  padding: 9px 16px;
+  font-size: var(--fs-meta);
   color: var(--tank-dim);
   background: rgba(9, 18, 31, 0.55);
   border-top: 1px solid rgba(148, 178, 216, 0.14);
@@ -233,9 +297,12 @@ button { font-family: inherit; }
 .legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; border: 1px solid rgba(255, 255, 255, 0.35); }
 .legend .note { margin-left: auto; color: rgba(143, 163, 189, 0.8); }
 
-.node-g { cursor: pointer; }
-.node-g circle.core { transition: stroke-width 0.15s ease; }
-.node-g:hover circle.core { stroke-width: 2.5; }
+/* 节点 hover：描边加粗 + 轻微上浮 120ms，运动只在用户操作后发生（红线） */
+.node-g { cursor: pointer; transition: transform 0.12s ease; }
+.node-g:hover { transform: translateY(-1px); }
+.node-g:hover circle.core { stroke-width: 3; }
+.node-g circle.core { transition: stroke-width 0.12s ease; }
+.node-tag { pointer-events: none; }
 
 /* ---------- 详情卡 ---------- */
 .detail-card {
@@ -288,7 +355,7 @@ button { font-family: inherit; }
   padding: 18px;
 }
 
-.panel-title { font-size: 13.5px; font-weight: 500; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+.panel-title { font-size: 16px; font-weight: 500; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 .badge-warn {
   display: inline-block;
@@ -348,7 +415,7 @@ select:focus { outline: none; border-color: var(--primary); }
   background: var(--bg);
   border-radius: 10px;
 }
-.tiny-note { font-size: 11.5px; color: var(--ink-3); margin-top: 12px; line-height: 1.6; }
+.tiny-note { font-size: var(--fs-meta); color: var(--ink-3); margin-top: 12px; line-height: 1.6; }
 
 textarea {
   width: 100%;
@@ -380,13 +447,40 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 
 /* ---------- 放生报告 ---------- */
 .gauge-row { display: flex; align-items: center; gap: 16px; }
-.prob-num { font-size: 30px; font-weight: 500; font-variant-numeric: tabular-nums; }
-.prob-label { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+.prob-num { font-size: 28px; font-weight: 500; }
+.prob-label { font-size: var(--fs-meta); color: var(--ink-3); margin-top: 2px; }
+
+/* 「AI : 规则 = 6:4 混合」从一行灰字改成两段式小条形：
+   “混合”是这套预测的核心卖点，必须肉眼可见，而不是埋在注释里 */
+.mix-bar {
+  display: flex;
+  height: 22px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  margin: 8px 0 4px;
+  font-size: 11px;
+}
+.mix-bar span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.mix-bar .seg-ai { background: var(--primary); color: #fff; }
+.mix-bar .seg-rule { background: var(--primary-soft); color: var(--primary-deep); }
+
 .verdict { font-size: 13.5px; color: var(--ink); margin-top: 10px; }
 .report-block { margin-top: 12px; }
 .report-block .bt { font-size: 12px; color: var(--ink-3); margin-bottom: 5px; }
 .report-list { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--ink-2); }
 .report-list li { margin-bottom: 4px; }
+/* 风险 / 杂交建议列表加左侧 2px 色条：风险=暖色警示，建议=主色引导，
+   让两类建议在列表层面就能被一眼分开 */
+.report-list.strip { list-style: none; padding-left: 0; }
+.report-list.strip li { padding-left: 10px; border-left: 2px solid var(--risk); margin-bottom: 6px; }
+.report-list.strip.advice li { border-left-color: var(--primary); }
 .fine-print { font-size: 11px; color: var(--ink-3); margin-top: 12px; line-height: 1.6; border-top: 1px dashed var(--line); padding-top: 10px; }
 
 .err {
@@ -411,3 +505,23 @@ textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 
 .footer-note { margin-top: 40px; font-size: 12px; color: var(--ink-3); text-align: center; }
 
 .report-preview { border: 1px solid var(--line); border-radius: 12px; overflow: auto; max-height: 420px; background: #fdfdfb; }
+
+/* ---------- 响应式（<768 单列） ---------- */
+@media (max-width: 767px) {
+  .app { padding: 0 16px 40px; }
+  /* 观测窗在窄屏保持 360 高：内容按 viewBox 等比缩放居中，
+     上下留出的深色边带正好呼应「观测窗」气质，节点不会被裁切。
+     必须用 > 直接子代选择器：图例里的 12px 策略符号也是 svg，
+     不限制作用域会被一起拉成 360px 把图例撑爆 */
+  .tank-svg-wrap > svg { height: 360px; }
+  /* 窄屏下图例改为文档流（不再悬浮）：390 宽时图例折成三行约 130px，
+     而 svg 可视场景只有约 220px 高，悬浮必然盖住节点 */
+  .legend { position: static; }
+  .hero { padding-top: 22px; }
+  .hero-caps span { padding: 10px 4px; font-size: 12px; }
+  .hot-row { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 10px; padding: 12px 8px; }
+  .hot-rank { font-size: 18px; }
+  .hot-actions { gap: 8px; }
+  .hot-actions .btn { padding: 7px 10px; }
+  .searchbar { flex-direction: column; }
+}
