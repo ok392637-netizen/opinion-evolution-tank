@@ -77,7 +77,9 @@ const before = await quota();
 console.log('抓取前余量:', JSON.stringify(before));
 
 // 每个问题消耗 1 次 question_answers + 1 次 zhihu_search，留 2 次余量不用完
-const budget = Math.min(before.question_answers - 2, before.zhihu_search - 2, list.length);
+// 预留额度可通过 RESERVE 环境变量调整；默认留 2 次应急
+const RESERVE = Number(process.env.RESERVE ?? 2);
+const budget = Math.min(before.question_answers - RESERVE, before.zhihu_search - RESERVE, list.length);
 if (budget <= 0) {
   console.error(`余量不足（qa=${before.question_answers}, search=${before.zhihu_search}），不抓取。`);
   process.exit(1);

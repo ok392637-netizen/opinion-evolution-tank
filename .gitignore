@@ -4,6 +4,10 @@ dist/
 .env
 app/server/.env
 app/server/data/eco-cache.json
+# 运行时缓存不入库；hot-snapshot.json 是可入库的真实热榜快照，不能加进这里
+app/server/data/hot-cache.json
+app/server/data/search-cache.json
+app/server/data/qa-cache.json
 # 凭证备份（含 Access Secret 明文，绝不入库）
 .env.bak.*
 **/.env.bak.*

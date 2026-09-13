@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 import { buildEcosystem } from '../src/ecosystem.js';
 import { fetchQuota, hashKey, isEcoCacheEntryReady } from '../src/zhihu.js';
@@ -123,117 +123,8 @@ export async function prebuildTanks({
   return result;
 }
 
-// ---------- 离线模式：--from-raw ----------
-
-// 离线替身必须严格照 searchZhihu / fetchQuestionAnswers 的既有返回形状喂数据：
-// 复用 buildEcosystem 已验证的注入点，是为了让离线缸与在线缸走完全相同的
-// 标注与组装管线，避免“另起炉灶”导致两种构建路径行为分叉。
-function rawSubstitutes(rawItem) {
-  const all = Array.isArray(rawItem?.answers) ? rawItem.answers : [];
-  const answers = async (questionUrl, offset = 0, limit = 10) => ({
-    items: all.slice(offset, offset + limit),
-    paging: { IsEnd: offset + limit >= all.length, NextOffset: offset + limit },
-  });
-  const search = async () => (Array.isArray(rawItem?.search) ? rawItem.search : []);
-  return { search, answers };
-}
-
-// 某一立场/策略占比 ≥80% 说明标注可能退化回全灰，必须显眼警告而不是悄悄通过。
-const DEGENERATION_RATIO = 0.8;
-
-function degenerationWarnings(species) {
-  const total = species?.length || 0;
-  const warnings = [];
-  if (!total) return warnings;
-  for (const field of ['stance', 'strategy']) {
-    const dist = distributions(species, field);
-    for (const [label, count] of Object.entries(dist)) {
-      if (count / total >= DEGENERATION_RATIO) {
-        warnings.push(`${field} 退化：「${label}」占 ${count}/${total}（≥80%）`);
-      }
-    }
-  }
-  return warnings;
-}
-
-// 离线预构建：data/raw-tanks.json 是赛前抢在额度过期前抓的真实素材，
-// 全程零网络（不查 quota、不调直答/搜索），aiNarrative 恒为 null ——
-// 这不是失败，本地标注已能撑起整个缸，AI 解说留待额度重置后单独补。
-export async function prebuildFromRaw({
-  rawFile,
-  dataDir = DEFAULT_DATA_DIR,
-  buildEcosystemImpl = buildEcosystem,
-  fetchImpl, // 仅用于测试注入会抛异常的 fetch 替身来自证零网络；正常离线流程不触网
-  log = () => {},
-} = {}) {
-  const raw = JSON.parse(await fs.readFile(rawFile, 'utf8'));
-  if (!Array.isArray(raw)) throw new Error(`raw 文件必须是数组：${rawFile}`);
-  const tanksFile = path.join(dataDir, 'prebuilt-tanks.json');
-
-  const entries = [];
-  const result = { total: raw.length, saved: 0, failed: 0, warnings: [], message: '' };
-  for (const item of raw) {
-    const question = String(item?.question || '').trim();
-    const url = String(item?.url || '').trim();
-    if (!question) {
-      result.failed += 1;
-      continue;
-    }
-    // key 算法与 /api/ecosystem 完全一致（hashKey(question + '|' + url)），
-    // 错了前端会 cache miss 再去打 API，离线预构建就白做了。
-    const key = hashKey(`${question}|${url}`);
-    try {
-      const { search, answers } = rawSubstitutes(item);
-      const data = await buildEcosystemImpl(question, url, { search, answers, includeAi: false, fetchImpl });
-      entries.push({ k: key, ts: Date.now(), data });
-      result.saved += 1;
-      const species = data?.species || [];
-      const enriched = species.filter((s) => s?.enriched).length;
-      log(
-        [
-          `SAVE ${question}`,
-          `species=${species.length}`,
-          `stance=${JSON.stringify(distributions(species, 'stance'))}`,
-          `strategy=${JSON.stringify(distributions(species, 'strategy'))}`,
-          `enriched=${enriched}/${species.length}`,
-          `aiNarrative=${Boolean(data?.aiNarrative)}`,
-        ].join(' '),
-      );
-      for (const warning of degenerationWarnings(species)) {
-        result.warnings.push(`${question} :: ${warning}`);
-        log(`⚠️ 警告 ${question} :: ${warning}`);
-      }
-    } catch (error) {
-      // 单缸失败不拖垮整批：素材是花额度抓的，能救几个缸是几个。
-      result.failed += 1;
-      log(`FAIL ${question} :: ${error instanceof Error ? error.message : error}`);
-    }
-  }
-
-  // 整文件覆盖写（而非逐条合并）：raw 是离线缸的唯一事实来源，
-  // 重跑必须得到完全相同的结果，不追加、不残留上一轮的旧条目。
-  await fs.mkdir(path.dirname(tanksFile), { recursive: true });
-  await fs.writeFile(tanksFile, JSON.stringify(entries, null, 2), 'utf8');
-
-  result.message = `offline prebuild complete: saved=${result.saved} failed=${result.failed}`;
-  return result;
-}
-
-// 判断当前进程是否为主入口。旧写法 `file://${process.argv[1]}` 在 Windows 上
-// 永远不匹配（盘符+反斜杠），导致 CLI 入口形同虚设；用 pathToFileURL 归一化才可靠。
-function isMainModule() {
-  const argv1 = process.argv[1];
-  if (!argv1) return false;
-  return import.meta.url === pathToFileURL(path.resolve(argv1)).href;
-}
-
-if (isMainModule()) {
-  const args = process.argv.slice(2);
-  const fromRawAt = args.indexOf('--from-raw');
-  const run = fromRawAt !== -1
-    ? prebuildFromRaw({ rawFile: path.resolve(args[fromRawAt + 1]), log: console.log })
-    : prebuildTanks({ log: console.log });
-  run.then((result) => {
+if (import.meta.url === `file://${process.argv[1]}`) {
+  prebuildTanks({ log: console.log }).then((result) => {
     console.log(JSON.stringify(result, null, 2));
   }).catch((error) => {
     console.error(error);

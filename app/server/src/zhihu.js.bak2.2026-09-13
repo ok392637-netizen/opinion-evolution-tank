@@ -6,8 +6,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { demoHot } from './demoData.js';
-
 const BASE = 'https://developer.zhihu.com';
 const TIMEOUT_MS = 20000;
 
@@ -76,10 +74,6 @@ function cachePaths(dataDir = CACHE_DIR) {
     cacheDir: dataDir,
     cacheFile: path.join(dataDir, 'eco-cache.json'),
     prebuiltFile: path.join(dataDir, PREBUILT_FILE),
-    hotFile: path.join(dataDir, 'hot-cache.json'),
-    hotSnapshotFile: path.join(dataDir, 'hot-snapshot.json'),
-    searchFile: path.join(dataDir, 'search-cache.json'),
-    qaFile: path.join(dataDir, 'qa-cache.json'),
   };
 }
 
@@ -91,36 +85,6 @@ function readJsonArray(file) {
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
-  }
-}
-
-// 对象型缓存文件（热榜、快照）同样允许缺失或损坏，降级为 null 交给后续兜底链。
-function readJsonObject(file) {
-  try {
-    if (!fs.existsSync(file)) return null;
-    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-// search/qa 这类多 key 缓存共用一套落盘格式：[{ k, ts, data }]，按 key 覆盖合并。
-// 内存未命中时先查磁盘：Render 免费档 15 分钟休眠一次，评审期反复冷启动，
-// 纯内存缓存意味着每个冷启动后的第一个访客都要烧一次真实额度。
-function readPersistedEntry(file, key, ttl) {
-  const entry = readJsonArray(file).find((e) => e?.k === key);
-  if (entry && Date.now() - entry.ts < ttl) return entry;
-  return null;
-}
-
-function persistMapEntry(file, key, data, maxEntries = 100) {
-  try {
-    if (!fs.existsSync(path.dirname(file))) fs.mkdirSync(path.dirname(file), { recursive: true });
-    const merged = [{ k: key, ts: Date.now(), data }, ...readJsonArray(file).filter((e) => e?.k !== key)];
-    fs.writeFileSync(file, JSON.stringify(merged.slice(0, maxEntries)), 'utf8');
-  } catch {
-    // 磁盘写入失败不影响内存缓存
   }
 }
 
@@ -241,73 +205,31 @@ async function zhidaRemaining(force = false, { fetchImpl } = {}) {
 
 // ---------- 业务调用 ----------
 
-export async function fetchHot({ dataDir = CACHE_DIR, fetchImpl } = {}) {
+export async function fetchHot() {
   return dedup('hot', async () => {
-    const { hotFile, hotSnapshotFile } = cachePaths(dataDir);
-    // 降级链：内存 → 磁盘 → 真实 API → 快照 → 演示数据。
-    // 评审窗口我们不在场，热榜额度只有 2 次/日，链上每一环都在为下一环省额度。
-
-    // 1) 内存缓存（同一进程内 12h 新鲜）
     if (hotCache.data && Date.now() - hotCache.ts < HOT_TTL) {
       return { ...hotCache.data, cached: true };
     }
-    // 2) 磁盘缓存：服务冷启动后内存必空，磁盘是保卫热榜额度的第二道防线
-    const disk = readJsonObject(hotFile);
-    if (disk?.data?.items?.length && Date.now() - disk.ts < HOT_TTL) {
-      hotCache.data = disk.data;
-      hotCache.ts = disk.ts;
-      return { ...disk.data, cached: true };
-    }
-    // 3) 真实 API（只有前两环都 miss 才轮到它烧额度）
     try {
       const body = await request(`${BASE}/api/v1/content/hot_list?Limit=30`, {
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-      }, { fetchImpl });
+      });
       const items = (body?.Data?.Items || []).map((it) => ({
         title: it.Title,
         url: it.Url,
         summary: it.Summary || '',
         thumbnail: it.ThumbnailUrl || '',
       }));
-      // 额度耗尽时官方返回空列表而非报错；空列表没有展示价值，
-      // 必须当作失败继续走兜底链，更不能拿它覆盖掉磁盘上的真实缓存。
-      if (!items.length) throw new Error('热榜返回空列表（额度可能已耗尽）');
       const data = { items, fetchedAt: Date.now() };
       hotCache.data = data;
       hotCache.ts = Date.now();
-      persistHotCache(hotFile, data);
       return { ...data, cached: false };
     } catch (e) {
-      // stale-while-error：过期的真实热榜仍然优于快照和演示数据
+      // stale-while-error：额度耗尽或网络故障时回退上次缓存
       if (hotCache.data) return { ...hotCache.data, cached: true, stale: true, warning: e.message };
-      if (disk?.data?.items?.length) return { ...disk.data, cached: true, stale: true, warning: e.message };
-      // 4) 快照：赛前真实采集的历史热榜，必须如实标注来源与采集时间——
-      // 真实历史快照 ≠ 虚构演示数据，混为一谈就是欺骗评委。
-      const snapshot = readJsonObject(hotSnapshotFile);
-      if (snapshot?.items?.length) {
-        return {
-          items: snapshot.items,
-          fetchedAt: snapshot.snapshotAt,
-          source: 'snapshot',
-          snapshotAt: snapshot.snapshotAt,
-          cached: true,
-          warning: e.message,
-        };
-      }
-      // 5) 最后的兜底才是虚构演示数据（前端有醒目标识）
-      return { ...demoHot, warning: e.message };
+      throw e;
     }
   });
-}
-
-// 热榜缓存落盘：与 eco-cache 同机制，fetchHot 成功后写盘，冷启动后从磁盘恢复。
-function persistHotCache(hotFile, data) {
-  try {
-    if (!fs.existsSync(path.dirname(hotFile))) fs.mkdirSync(path.dirname(hotFile), { recursive: true });
-    fs.writeFileSync(hotFile, JSON.stringify({ ts: Date.now(), data }), 'utf8');
-  } catch {
-    // 磁盘写入失败不影响内存缓存
-  }
 }
 
 // 按问题 URL 拉取该问题下的回答列表（2026-09-13 实测发现的隐藏端点，不在官方文档中）
@@ -315,21 +237,15 @@ function persistHotCache(hotFile, data) {
 const qaCache = new Map(); // key: questionUrl|offset|limit → { data, ts }
 const QA_TTL = 6 * 60 * 60 * 1000; // 6 小时
 
-export async function fetchQuestionAnswers(questionUrl, offset = 0, limit = 10, { dataDir = CACHE_DIR, fetchImpl } = {}) {
+export async function fetchQuestionAnswers(questionUrl, offset = 0, limit = 10) {
   const key = `qa:${questionUrl}|${offset}|${limit}`;
   const hit = qaCache.get(key);
   if (hit && Date.now() - hit.ts < QA_TTL) return hit.data;
-  // 内存 miss 时先查磁盘：冷启动不该让同一问题的回答列表再烧一次额度
-  const persisted = readPersistedEntry(cachePaths(dataDir).qaFile, key, QA_TTL);
-  if (persisted) {
-    qaCache.set(key, { data: persisted.data, ts: persisted.ts });
-    return persisted.data;
-  }
   const data = await dedup(key, async () => {
     const url = `${BASE}/api/v1/content/question_answers?QuestionUrl=${encodeURIComponent(questionUrl)}&Offset=${offset}&Limit=${limit}`;
     const body = await request(url, {
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-    }, { fetchImpl });
+    });
     return {
       items: (body?.Data?.Items || []).map((it) => ({
         id: String(it.ContentToken),
@@ -341,28 +257,21 @@ export async function fetchQuestionAnswers(questionUrl, offset = 0, limit = 10, 
     };
   });
   qaCache.set(key, { data, ts: Date.now() });
-  persistMapEntry(cachePaths(dataDir).qaFile, key, data);
   return data;
 }
 
 const searchCache = new Map(); // key: query → { data, ts }
 const SEARCH_TTL = 6 * 60 * 60 * 1000; // 6 小时，保护 10 次/日额度
 
-export async function searchZhihu(query, count = 10, { dataDir = CACHE_DIR, fetchImpl } = {}) {
+export async function searchZhihu(query, count = 10) {
   const key = `search:${query}`;
   const hit = searchCache.get(key);
   if (hit && Date.now() - hit.ts < SEARCH_TTL) return hit.data;
-  // 内存 miss 时先查磁盘，理由同 qa 缓存：搜索结果是用 10 次/日额度换来的
-  const persisted = readPersistedEntry(cachePaths(dataDir).searchFile, key, SEARCH_TTL);
-  if (persisted) {
-    searchCache.set(key, { data: persisted.data, ts: persisted.ts });
-    return persisted.data;
-  }
   const data = await dedup(key, async () => {
     const url = `${BASE}/api/v1/content/zhihu_search?Query=${encodeURIComponent(query)}&Count=${count}`;
     const body = await request(url, {
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-    }, { fetchImpl });
+    });
     return (body?.Data?.Items || []).map((it) => ({
       id: it.ContentID,
       title: it.Title,
@@ -380,7 +289,6 @@ export async function searchZhihu(query, count = 10, { dataDir = CACHE_DIR, fetc
     }));
   });
   searchCache.set(key, { data, ts: Date.now() });
-  persistMapEntry(cachePaths(dataDir).searchFile, key, data);
   return data;
 }
 

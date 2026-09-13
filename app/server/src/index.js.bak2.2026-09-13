@@ -52,14 +52,12 @@ app.get('/api/status', (req, res) => {
 app.get('/api/hot', async (req, res) => {
   if (!live()) return res.json({ ...demoHot, source: 'demo' });
   try {
-    const data = await fetchHot(dataDirOpts());
+    const data = await fetchHot();
     if (!data.items.length) {
       // 热榜额度耗尽时官方返回空列表：降级为演示热榜并如实告知
       return res.json({ ...demoHot, source: 'demo', warning: '今日热榜额度已耗尽，以下为演示数据（明日 0 点额度重置）' });
     }
-    // fetchHot 的兜底链可能返回 source:'snapshot'（真实历史快照）或 'demo'（演示数据），
-    // 必须原样透传给前端如实展示，只有链上真实 API/缓存命中才标 'live'。
-    res.json({ source: 'live', ...data });
+    res.json({ ...data, source: 'live' });
   } catch (e) {
     res.status(502).json({ error: `热榜获取失败：${e.message}`, code: e.code });
   }
