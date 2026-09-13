@@ -1,13 +1,13 @@
 [
   {
     "k": "1853516810",
-    "ts": 1789322147866,
+    "ts": 1789319954240,
     "data": {
       "question": "罗永浩称野人先生冰激凌很一般，野人先生该如何回应这场突发舆情？",
       "questionUrl": "https://www.zhihu.com/question/2082497943508973001",
       "source": "live",
       "dataSource": "question_answers",
-      "createdAt": 1789322147866,
+      "createdAt": 1789319954240,
       "species": [
         {
           "id": "2082504115385585908",
@@ -224,7 +224,12 @@
                 "weight": 0
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "100 / 100",
+                "weight": 1.8
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -317,7 +322,7 @@
           "featuredComments": [],
           "stance": "中立",
           "strategy": "数据论证",
-          "confidence": 0.222,
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
@@ -342,13 +347,13 @@
   },
   {
     "k": "4259163695",
-    "ts": 1789322147874,
+    "ts": 1789319954248,
     "data": {
       "question": "HYROX 北京站比赛选手失禁仍完成比赛，比赛规则和卫生安全引争议，如何看待此事？",
       "questionUrl": "https://www.zhihu.com/question/2082250121257997440",
       "source": "live",
       "dataSource": "question_answers",
-      "createdAt": 1789322147874,
+      "createdAt": 1789319954248,
       "species": [
         {
           "id": "2082426997507089437",
@@ -556,14 +561,14 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2082250121257997440/answer/2082491382069981746",
           "featuredComments": [],
-          "stance": "反对",
+          "stance": "中立",
           "strategy": "数据论证",
-          "confidence": 0.333,
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
-                "term": "不能 / 不是",
-                "weight": 1.8
+                "term": "特征不足",
+                "weight": 0
               }
             ],
             "strategy": []
@@ -648,14 +653,14 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2082250121257997440/answer/2082533584682993289",
           "featuredComments": [],
-          "stance": "解构",
+          "stance": "中立",
           "strategy": "数据论证",
-          "confidence": 0.333,
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
-                "term": "其实是",
-                "weight": 2.2
+                "term": "特征不足",
+                "weight": 0
               }
             ],
             "strategy": []
@@ -665,8 +670,8 @@
           "heatRank": 1
         }
       ],
-      "annotationWarning": null,
-      "narrative": "「HYROX 北京站比赛选手失禁仍完成比赛，比赛规则和卫生安全引争议，如何看待此事？」的生态缸中采集到 10 个观点物种。优势立场是「中立」（7 个物种）；当前能量最高的是「故事叙事」型回答（610 赞同）。本问题下最常见的生存策略是「数据论证」——在这个生态位，它比其他策略更容易存活。",
+      "annotationWarning": "立场特征稀疏，多数物种落入同一类，标注可信度低",
+      "narrative": "「HYROX 北京站比赛选手失禁仍完成比赛，比赛规则和卫生安全引争议，如何看待此事？」的生态缸中采集到 10 个观点物种。优势立场是「中立」（9 个物种）；当前能量最高的是「故事叙事」型回答（610 赞同）。本问题下最常见的生存策略是「数据论证」——在这个生态位，它比其他策略更容易存活。",
       "aiNarrative": null,
       "aiNarrativeSource": null,
       "aiFactions": null,
@@ -675,13 +680,13 @@
   },
   {
     "k": "2759175480",
-    "ts": 1789322147880,
+    "ts": 1789319954253,
     "data": {
       "question": "男生去年考上北大医学部放弃，2026 年又考进北大图灵班，做到这点有多难？怎样看待他的选择？",
       "questionUrl": "https://www.zhihu.com/question/2082370923865420719",
       "source": "live",
       "dataSource": "question_answers",
-      "createdAt": 1789322147880,
+      "createdAt": 1789319954253,
       "species": [
         {
           "id": "2082407403228865607",
@@ -764,17 +769,26 @@
           "editTime": 1789272364,
           "url": "https://www.zhihu.com/question/2082370923865420719/answer/2082439912138216869",
           "featuredComments": [],
-          "stance": "中立",
+          "stance": "反对",
           "strategy": "数据论证",
-          "confidence": 0.667,
+          "confidence": 0.333,
           "evidence": {
             "stance": [
               {
-                "term": "特征不足",
-                "weight": 0
+                "term": "不是 / 不是",
+                "weight": 0.99
+              },
+              {
+                "term": "否定副词密度>3/百字",
+                "weight": 0.77
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "05 / 600 / 700 / 693",
+                "weight": 3.6
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -837,7 +851,16 @@
                 "weight": 0
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "50 / 180",
+                "weight": 1.8
+              },
+              {
+                "term": "万",
+                "weight": 0.35
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -936,7 +959,11 @@
             "strategy": [
               {
                 "term": "132、 / 143、 / 100、 / 99、",
-                "weight": 6
+                "weight": 4.8
+              },
+              {
+                "term": "693 / 714 / 700 / 10",
+                "weight": 3.6
               }
             ]
           },
@@ -957,24 +984,20 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2082370923865420719/answer/2082614163470402238",
           "featuredComments": [],
-          "stance": "反对",
-          "strategy": "数据论证",
-          "confidence": 0.139,
+          "stance": "中立",
+          "strategy": "抖机灵",
+          "confidence": 0.119,
           "evidence": {
             "stance": [
               {
-                "term": "不是 / 不是",
-                "weight": 0.99
-              },
-              {
-                "term": "否定副词密度>3/百字",
-                "weight": 0.77
+                "term": "特征不足",
+                "weight": 0
               }
             ],
             "strategy": [
               {
-                "term": "这男娃子最难得的是十八岁就知道北医不",
-                "weight": 2.4
+                "term": "（中国学）",
+                "weight": 1.4
               }
             ]
           },
@@ -1022,13 +1045,13 @@
   },
   {
     "k": "2262451224",
-    "ts": 1789322147886,
+    "ts": 1789319954260,
     "data": {
       "question": "清朝人口为何从1400万迅速长到4亿？呈现爆发式增长，是何原因？",
       "questionUrl": "https://www.zhihu.com/question/528355615",
       "source": "live",
       "dataSource": "question_answers",
-      "createdAt": 1789322147886,
+      "createdAt": 1789319954260,
       "species": [
         {
           "id": "2082392940350027113",
@@ -1055,8 +1078,12 @@
             ],
             "strategy": [
               {
-                "term": "中国人口为何从明末2亿人下降到清初1",
-                "weight": 2.4
+                "term": "2 / 1400",
+                "weight": 1.8
+              },
+              {
+                "term": "亿 / 万",
+                "weight": 0.7
               }
             ]
           },
@@ -1118,16 +1145,16 @@
             ],
             "strategy": [
               {
+                "term": "1644 / 5 / 19 / 1.2",
+                "weight": 4.8
+              },
+              {
                 "term": "平均 / 平均",
                 "weight": 3.6
               },
               {
-                "term": "1644年至清朝灭亡时，世界人口从约",
-                "weight": 2.4
-              },
-              {
-                "term": "1.",
-                "weight": 1.5
+                "term": "亿 / 亿 / 亿 / 亿",
+                "weight": 1.4
               }
             ]
           },
@@ -1160,8 +1187,12 @@
             ],
             "strategy": [
               {
-                "term": "不如分析一下中国人口从明末的两亿锐减",
-                "weight": 2.4
+                "term": "8000",
+                "weight": 0.9
+              },
+              {
+                "term": "亿 / 万",
+                "weight": 0.7
               }
             ]
           },
@@ -1192,7 +1223,16 @@
                 "weight": 0
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "1400 / 1400",
+                "weight": 1.8
+              },
+              {
+                "term": "万 / 万",
+                "weight": 0.7
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -1221,7 +1261,16 @@
                 "weight": 0
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "1593 / 51",
+                "weight": 1.8
+              },
+              {
+                "term": "万",
+                "weight": 0.35
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -1252,12 +1301,12 @@
             ],
             "strategy": [
               {
-                "term": "清据初期为啥只有1400万汉人呢，其 / 1645年，著名的“扬州十日”，单单",
+                "term": "1400 / 1639 / 2.5 / 1644",
                 "weight": 4.8
               },
               {
-                "term": "2.",
-                "weight": 1.5
+                "term": "万 / 万 / 万 / 万",
+                "weight": 1.4
               }
             ]
           },
@@ -1319,12 +1368,16 @@
             ],
             "strategy": [
               {
-                "term": "但清代人口的下限，绝对远远超过140 / [图片] 清代初期的人口统计，是以丁",
+                "term": "统计 / 统计",
                 "weight": 4.8
               },
               {
-                "term": "统计 / 统计",
-                "weight": 4.8
+                "term": "1400 / 1651 / 1063 / 1734",
+                "weight": 3.6
+              },
+              {
+                "term": "万 / 万 / 万",
+                "weight": 1.05
               }
             ]
           },
@@ -1351,18 +1404,18 @@
           "evidence": {
             "stance": [
               {
-                "term": "这难道不是伪史论？",
-                "weight": 1.5
-              },
-              {
                 "term": "不是 / 不是 / 不能",
                 "weight": 1.485
               }
             ],
             "strategy": [
               {
-                "term": "“明朝末年只有1400万人”，这不是",
-                "weight": 2.4
+                "term": "1400",
+                "weight": 0.9
+              },
+              {
+                "term": "万",
+                "weight": 0.35
               }
             ]
           },
@@ -1381,13 +1434,13 @@
   },
   {
     "k": "2125468569",
-    "ts": 1789322147893,
+    "ts": 1789319954266,
     "data": {
       "question": "Anthropic 掌门人呼吁放缓 AI 模型迭代，马斯克、奥尔特曼响应，此举背后出于哪些考量？",
       "questionUrl": "https://www.zhihu.com/question/2082326195320918583",
       "source": "live",
       "dataSource": "question_answers",
-      "createdAt": 1789322147893,
+      "createdAt": 1789319954266,
       "species": [
         {
           "id": "2082389697129726884",
@@ -1441,7 +1494,12 @@
                 "weight": 1.8
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "5",
+                "weight": 0.9
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -1567,7 +1625,12 @@
                 "weight": 0
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "2027",
+                "weight": 0.9
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -1688,18 +1751,14 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2082326195320918583/answer/2082559506546943627",
           "featuredComments": [],
-          "stance": "支持",
+          "stance": "中立",
           "strategy": "数据论证",
-          "confidence": 0.667,
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
-                "term": "确实 / 确实",
-                "weight": 3.6
-              },
-              {
-                "term": "同意",
-                "weight": 2.4
+                "term": "特征不足",
+                "weight": 0
               }
             ],
             "strategy": []
@@ -1710,7 +1769,7 @@
         }
       ],
       "annotationWarning": "立场特征稀疏，多数物种落入同一类，标注可信度低",
-      "narrative": "「Anthropic 掌门人呼吁放缓 AI 模型迭代，马斯克、奥尔特曼响应，此举背后出于哪些考量？」的生态缸中采集到 10 个观点物种。优势立场是「中立」（8 个物种）；当前能量最高的是「数据论证」型回答（614 赞同）。本问题下最常见的生存策略是「数据论证」——在这个生态位，它比其他策略更容易存活。",
+      "narrative": "「Anthropic 掌门人呼吁放缓 AI 模型迭代，马斯克、奥尔特曼响应，此举背后出于哪些考量？」的生态缸中采集到 10 个观点物种。优势立场是「中立」（9 个物种）；当前能量最高的是「数据论证」型回答（614 赞同）。本问题下最常见的生存策略是「数据论证」——在这个生态位，它比其他策略更容易存活。",
       "aiNarrative": null,
       "aiNarrativeSource": null,
       "aiFactions": null,
@@ -1719,13 +1778,13 @@
   },
   {
     "k": "2653567048",
-    "ts": 1789322147901,
+    "ts": 1789319954274,
     "data": {
       "question": "职场上为什么有能力的人爬不上去？",
       "questionUrl": "https://www.zhihu.com/question/2058854687621882538",
       "source": "live",
       "dataSource": "question_answers",
-      "createdAt": 1789322147901,
+      "createdAt": 1789319954274,
       "species": [
         {
           "id": "2082429133095704538",
@@ -1753,7 +1812,7 @@
             "strategy": [
               {
                 "term": "一、",
-                "weight": 1.5
+                "weight": 1.2
               }
             ]
           },
@@ -1850,7 +1909,7 @@
             "strategy": [
               {
                 "term": "一、",
-                "weight": 1.5
+                "weight": 1.2
               }
             ]
           },
@@ -1992,7 +2051,7 @@
             "strategy": [
               {
                 "term": "1、",
-                "weight": 1.5
+                "weight": 2.1
               }
             ]
           },
@@ -2023,7 +2082,12 @@
                 "weight": 0
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "万",
+                "weight": 0.35
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -2044,7 +2108,7 @@
           "featuredComments": [],
           "stance": "中立",
           "strategy": "数据论证",
-          "confidence": 0.667,
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
@@ -2069,13 +2133,13 @@
   },
   {
     "k": "2498273903",
-    "ts": 1789322147906,
+    "ts": 1789319954279,
     "data": {
       "question": "预感将被裁员且能力不足，该主动辞职吗？",
       "questionUrl": "https://www.zhihu.com/question/2081988407358767777",
       "source": "live",
       "dataSource": "question_answers",
-      "createdAt": 1789322147906,
+      "createdAt": 1789319954279,
       "species": [
         {
           "id": "2082504508857496445",
@@ -2163,7 +2227,12 @@
                 "weight": 0
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "万",
+                "weight": 0.35
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -2230,7 +2299,12 @@
                 "weight": 1.4
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "万 / 万",
+                "weight": 0.7
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -2280,7 +2354,7 @@
           "featuredComments": [],
           "stance": "反对",
           "strategy": "情绪共鸣",
-          "confidence": 0.333,
+          "confidence": 0.218,
           "evidence": {
             "stance": [
               {
@@ -2341,18 +2415,14 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2081988407358767777/answer/2082003420232402203",
           "featuredComments": [],
-          "stance": "反对",
+          "stance": "中立",
           "strategy": "数据论证",
-          "confidence": 0.667,
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
-                "term": "否定副词密度>3/百字",
-                "weight": 1.4
-              },
-              {
-                "term": "不能",
-                "weight": 0.9
+                "term": "特征不足",
+                "weight": 0
               }
             ],
             "strategy": []
@@ -2374,17 +2444,22 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2081988407358767777/answer/2082118527385866553",
           "featuredComments": [],
-          "stance": "反对",
+          "stance": "中立",
           "strategy": "数据论证",
-          "confidence": 0.333,
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
-                "term": "没必要",
-                "weight": 3
+                "term": "特征不足",
+                "weight": 0
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "万",
+                "weight": 0.35
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -2392,7 +2467,7 @@
         }
       ],
       "annotationWarning": null,
-      "narrative": "「预感将被裁员且能力不足，该主动辞职吗？」的生态缸中采集到 10 个观点物种。优势立场是「中立」（5 个物种）；当前能量最高的是「故事叙事」型回答（81 赞同）。本问题下最常见的生存策略是「数据论证」——在这个生态位，它比其他策略更容易存活。",
+      "narrative": "「预感将被裁员且能力不足，该主动辞职吗？」的生态缸中采集到 10 个观点物种。优势立场是「中立」（7 个物种）；当前能量最高的是「故事叙事」型回答（81 赞同）。本问题下最常见的生存策略是「数据论证」——在这个生态位，它比其他策略更容易存活。",
       "aiNarrative": null,
       "aiNarrativeSource": null,
       "aiFactions": null,
@@ -2401,13 +2476,13 @@
   },
   {
     "k": "3436309438",
-    "ts": 1789322147914,
+    "ts": 1789319954286,
     "data": {
       "question": "为什么酒店标间两张床的价格反而会低于一张床的大床房的价格，这背后的定价逻辑是什么？",
       "questionUrl": "https://www.zhihu.com/question/663413512",
       "source": "live",
       "dataSource": "question_answers",
-      "createdAt": 1789322147914,
+      "createdAt": 1789319954286,
       "species": [
         {
           "id": "2037535186225717554",
@@ -2423,7 +2498,7 @@
           "url": "https://www.zhihu.com/question/663413512/answer/2037535186225717554",
           "featuredComments": [],
           "stance": "中立",
-          "strategy": "故事叙事",
+          "strategy": "数据论证",
           "confidence": 0,
           "evidence": {
             "stance": [
@@ -2434,8 +2509,12 @@
             ],
             "strategy": [
               {
-                "term": "星级酒店为例： / 以及住店人数： / 的客房： / 标准间的价格：",
-                "weight": 3
+                "term": "415 / 481",
+                "weight": 1.8
+              },
+              {
+                "term": "元 / 元",
+                "weight": 0.7
               }
             ]
           },
@@ -2468,8 +2547,8 @@
             ],
             "strategy": [
               {
-                "term": "尤其超过500价格，可人往床底下一看",
-                "weight": 2.4
+                "term": "500",
+                "weight": 0.9
               }
             ]
           },
@@ -2490,17 +2569,22 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/663413512/answer/2023510470439519434",
           "featuredComments": [],
-          "stance": "中立",
+          "stance": "支持",
           "strategy": "数据论证",
           "confidence": 0.278,
           "evidence": {
             "stance": [
               {
-                "term": "特征不足",
-                "weight": 0
+                "term": "更好 / 更好 / 更好",
+                "weight": 2.97
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "90%",
+                "weight": 0.9
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -2529,7 +2613,12 @@
                 "weight": 0
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "3",
+                "weight": 0.9
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -2637,12 +2726,12 @@
           "featuredComments": [],
           "stance": "中立",
           "strategy": "抖机灵",
-          "confidence": 0.265,
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
-                "term": "分情况",
-                "weight": 2.4
+                "term": "特征不足",
+                "weight": 0
               }
             ],
             "strategy": [
@@ -2670,7 +2759,7 @@
           "url": "https://www.zhihu.com/question/663413512/answer/3594368820",
           "featuredComments": [],
           "stance": "中立",
-          "strategy": "故事叙事",
+          "strategy": "数据论证",
           "confidence": 0,
           "evidence": {
             "stance": [
@@ -2681,12 +2770,12 @@
             ],
             "strategy": [
               {
-                "term": "原因无非如下： / 标间的优点是： / 缺点是：",
-                "weight": 3
+                "term": "1 / 2 / 3 / 15",
+                "weight": 3.6
               },
               {
-                "term": "朋友",
-                "weight": 1.8
+                "term": "一、",
+                "weight": 1.2
               }
             ]
           },
@@ -2725,7 +2814,7 @@
         }
       ],
       "annotationWarning": "立场特征稀疏，多数物种落入同一类，标注可信度低",
-      "narrative": "「为什么酒店标间两张床的价格反而会低于一张床的大床房的价格，这背后的定价逻辑是什么？」的生态缸中采集到 10 个观点物种。优势立场是「中立」（9 个物种）；当前能量最高的是「故事叙事」型回答（热序 赞同）。本问题下最常见的生存策略是「数据论证」——在这个生态位，它比其他策略更容易存活。",
+      "narrative": "「为什么酒店标间两张床的价格反而会低于一张床的大床房的价格，这背后的定价逻辑是什么？」的生态缸中采集到 10 个观点物种。优势立场是「中立」（8 个物种）；当前能量最高的是「数据论证」型回答（热序 赞同）。本问题下最常见的生存策略是「数据论证」——在这个生态位，它比其他策略更容易存活。",
       "aiNarrative": null,
       "aiNarrativeSource": null,
       "aiFactions": null,
@@ -2734,13 +2823,13 @@
   },
   {
     "k": "2655499354",
-    "ts": 1789322147921,
+    "ts": 1789319954292,
     "data": {
       "question": "勇哥餐饮事件，博主线下调查发现火锅店实为两班倒，并非员工单人工作17小时，这一调查结果能否平息争议？",
       "questionUrl": "https://www.zhihu.com/question/2081927215936189203",
       "source": "live",
       "dataSource": "question_answers",
-      "createdAt": 1789322147921,
+      "createdAt": 1789319954292,
       "species": [
         {
           "id": "2082434710819567145",
@@ -2755,17 +2844,22 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2081927215936189203/answer/2082434710819567145",
           "featuredComments": [],
-          "stance": "中立",
+          "stance": "支持",
           "strategy": "数据论证",
-          "confidence": 0.427,
+          "confidence": 0.167,
           "evidence": {
             "stance": [
               {
-                "term": "没有争议",
-                "weight": 5
+                "term": "的确",
+                "weight": 1.8
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "17",
+                "weight": 0.9
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -2785,7 +2879,7 @@
           "url": "https://www.zhihu.com/question/2081927215936189203/answer/2082028542343361657",
           "featuredComments": [],
           "stance": "中立",
-          "strategy": "故事叙事",
+          "strategy": "数据论证",
           "confidence": 0,
           "evidence": {
             "stance": [
@@ -2796,8 +2890,8 @@
             ],
             "strategy": [
               {
-                "term": "勇哥： / 老板： / 勇哥： / 老板：",
-                "weight": 3
+                "term": "11 / 11 / 17",
+                "weight": 2.7
               }
             ]
           },
@@ -2818,17 +2912,22 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2081927215936189203/answer/2082477505647227925",
           "featuredComments": [],
-          "stance": "反对",
+          "stance": "中立",
           "strategy": "数据论证",
-          "confidence": 0.333,
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
-                "term": "很难",
-                "weight": 2.6
+                "term": "特征不足",
+                "weight": 0
               }
             ],
-            "strategy": []
+            "strategy": [
+              {
+                "term": "17",
+                "weight": 0.9
+              }
+            ]
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -2849,26 +2948,14 @@
           "featuredComments": [
             "猫头鹰的采访太业余了，带着答案去问问题，还当着老板面采访员工，问没顾客的时候老板允不允许休息，离大谱了，员工敢说不允许吗，就像老板请的托一样。但他至少亲自去现场采访了，这一点还是值得肯定的"
           ],
-          "stance": "反对",
+          "stance": "中立",
           "strategy": "数据论证",
-          "confidence": 0.788,
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
-                "term": "不是 / 不是 / 不是",
-                "weight": 2.7
-              },
-              {
-                "term": "卖惨宣传翻车",
-                "weight": 2.6
-              },
-              {
-                "term": "并不无辜",
-                "weight": 1.8
-              },
-              {
-                "term": "否定副词密度>3/百字",
-                "weight": 1.4
+                "term": "特征不足",
+                "weight": 0
               }
             ],
             "strategy": []
@@ -2890,22 +2977,17 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2081927215936189203/answer/2082020281925879792",
           "featuredComments": [],
-          "stance": "反对",
-          "strategy": "抖机灵",
-          "confidence": 0.333,
+          "stance": "中立",
+          "strategy": "数据论证",
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
-                "term": "不太能",
-                "weight": 3
+                "term": "特征不足",
+                "weight": 0
               }
             ],
-            "strategy": [
-              {
-                "term": "不太能，他主要爆在后续的berber站专场怼人等操作上，让很",
-                "weight": 2.4
-              }
-            ]
+            "strategy": []
           },
           "annotationSource": "local-heuristic",
           "summary": "",
@@ -2931,7 +3013,7 @@
             "stance": [
               {
                 "term": "不能 / 不是 / 不是",
-                "weight": 5.7
+                "weight": 2.7
               },
               {
                 "term": "否定副词密度>3/百字",
@@ -2962,22 +3044,14 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2081927215936189203/answer/2082408837806609332",
           "featuredComments": [],
-          "stance": "反对",
+          "stance": "中立",
           "strategy": "数据论证",
-          "confidence": 1,
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
-                "term": "没意义",
-                "weight": 3
-              },
-              {
-                "term": "不是 / 不是",
-                "weight": 1.8
-              },
-              {
-                "term": "否定副词密度>3/百字",
-                "weight": 1.4
+                "term": "特征不足",
+                "weight": 0
               }
             ],
             "strategy": []
@@ -2999,24 +3073,20 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2081927215936189203/answer/2082249527592067744",
           "featuredComments": [],
-          "stance": "反讽",
+          "stance": "中立",
           "strategy": "数据论证",
-          "confidence": 0.028,
+          "confidence": 0,
           "evidence": {
             "stance": [
               {
-                "term": "了说是",
-                "weight": 2.6
-              },
-              {
-                "term": "都没这么狠",
-                "weight": 2.2
+                "term": "特征不足",
+                "weight": 0
               }
             ],
             "strategy": [
               {
-                "term": "单人工作17个小时，意味着一天睡眠时",
-                "weight": 2.4
+                "term": "17 / 7 / 17 / 17",
+                "weight": 3.6
               }
             ]
           },
@@ -3037,24 +3107,20 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2081927215936189203/answer/2082449987699488606",
           "featuredComments": [],
-          "stance": "反对",
-          "strategy": "抖机灵",
-          "confidence": 0.051,
+          "stance": "中立",
+          "strategy": "身份站队",
+          "confidence": 0.139,
           "evidence": {
             "stance": [
               {
-                "term": "不是 / 不是 / 不可能",
-                "weight": 2.7
-              },
-              {
-                "term": "否定副词密度>3/百字",
-                "weight": 1.4
+                "term": "特征不足",
+                "weight": 0
               }
             ],
             "strategy": [
               {
-                "term": "（笑死） / （甚至可以说大多数打工人）",
-                "weight": 5.2
+                "term": "打工人 / 打工人",
+                "weight": 4.8
               }
             ]
           },
@@ -3075,23 +3141,19 @@
           "editTime": 0,
           "url": "https://www.zhihu.com/question/2081927215936189203/answer/2082229680711660450",
           "featuredComments": [],
-          "stance": "反对",
-          "strategy": "数据论证",
-          "confidence": 0,
+          "stance": "中立",
+          "strategy": "抖机灵",
+          "confidence": 0.083,
           "evidence": {
             "stance": [
               {
-                "term": "不是 / 不可能",
-                "weight": 1.8
-              },
-              {
-                "term": "有些人的生活常识匮乏到了什么样的程度？",
-                "weight": 1.5
+                "term": "特征不足",
+                "weight": 0
               }
             ],
             "strategy": [
               {
-                "term": "一般的饭店能连轴转17个小时，从头忙",
+                "term": "荒诞建议",
                 "weight": 2.4
               }
             ]
@@ -3101,8 +3163,8 @@
           "heatRank": 1
         }
       ],
-      "annotationWarning": null,
-      "narrative": "「勇哥餐饮事件，博主线下调查发现火锅店实为两班倒，并非员工单人工作17小时，这一调查结果能否平息争议？」的生态缸中采集到 10 个观点物种。优势立场是「反对」（7 个物种）；当前能量最高的是「数据论证」型回答（332 赞同）。本问题下最常见的生存策略是「数据论证」——在这个生态位，它比其他策略更容易存活。",
+      "annotationWarning": "立场特征稀疏，多数物种落入同一类，标注可信度低",
+      "narrative": "「勇哥餐饮事件，博主线下调查发现火锅店实为两班倒，并非员工单人工作17小时，这一调查结果能否平息争议？」的生态缸中采集到 10 个观点物种。优势立场是「中立」（8 个物种）；当前能量最高的是「数据论证」型回答（332 赞同）。本问题下最常见的生存策略是「数据论证」——在这个生态位，它比其他策略更容易存活。",
       "aiNarrative": null,
       "aiNarrativeSource": null,
       "aiFactions": null,

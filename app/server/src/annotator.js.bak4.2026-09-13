@@ -34,7 +34,6 @@ const STANCE_FEATURES = {
     feature('很难让人感动', 2.2, '否定情怀包装的说服力'),
     feature('评论区早炸了', 1.6, '借公众反应表达反对'),
     feature(/不可能|不能|不是|没有意义|无意义/g, 0.9, '高频否定推动反对分'),
-    feature(/(?:并不|毫不)(?:无辜|冤枉)/g, 1.8, '「并不无辜/冤枉」是中文常用的部分否定判词'),
   ],
   支持: [
     feature('确实', 1.8, '确认前文判断'),
@@ -80,8 +79,6 @@ const STANCE_FEATURES = {
     feature(/[“"「](格局大|情怀|高效|遥遥领先)[”"」]/g, 2.6, '引号包裹褒义词常表示反话'),
     feature(/[？！?!]{2,}/g, 1.6, '强情绪标点常与反讽共现'),
     feature(/(高效|先进|领先|格局大|情怀).{0,24}(不|没|无|却|只是|直接用外包)/g, 2.2, '褒义词后接否定会形成反语'),
-    feature(/了说是/g, 2.6, '句尾「了说是」是阴阳怪气式转述腔，几乎只在反讽语境出现'),
-    feature(/都(?:没|没有)这么(?:狠|夸张|离谱|拼|卷)/g, 2.2, '「连……都没这么……」比较级归谬是常见的嘲讽句式'),
   ],
   补充: [
     feature('补充一点', 3, '显式补充已有答案'),
@@ -96,46 +93,14 @@ const STANCE_FEATURES = {
     feature('对上', 1.4, '补充组织内外视角时常见'),
     feature('对内', 1.4, '补充组织内外视角时常见'),
   ],
-  // 中立的正向特征：真中立（明确不站队/条件化判断）和「什么都没识别出来」的兜底中立
-  // 必须区分开 —— 命中这里的中立有真实证据和置信度，兜底中立仍然是低置信度。
-  中立: [
-    feature('没有标准答案', 2.6, '显式承认问题无定论'),
-    feature(/(?:分情况|视情况而定|具体情况具体分析|因人而异|因情况而异)/g, 2.4, '把判断交给条件是典型不站队'),
-    feature(/(?:两边|双方|两派)都有(?:道理|可取之处|问题)/g, 2.4, '双向认可说明回答者拒绝选边'),
-    feature('取决于', 1.8, '条件化句式常见于中立回答'),
-    feature(/(?:没有|并无|不存在)(?:什么)?争议/g, 2.2, '直接声明无争议即不站队'),
-  ],
-};
-
-// 首句判词：中文回答面对「能否/该不该/会不会」型问题，常先用一到几个字的判词开篇
-// 再展开论证（「不能。」「不太能，」「没意义。」「很难平息争议，因为」）。
-// 这个判词是整条回答立场最可靠的信号 —— 论证过程里的「不」大多是陈述而非表态，
-// 全文词频完全丢弃了位置信息。所以这类特征只在开头一小段内匹配，
-// 权重设为普通特征的 2–3 倍（位置带来的可靠性，不是词本身更重要）。
-const OPENING_VERDICT_FEATURES = {
-  反对: [
-    feature(/^(?:不太?(?:能|会|行)|不能|不会|不行|不可以|不至于|没(?:有)?(?:意义|用|必要)|不可能|难说)/, 3, '开头直接否定判词'),
-    feature(/^(?:很难|难以|恐怕不|基本不|未必|难言)/, 2.6, '开头程度化否定判词'),
-    feature(/^.{0,6}(?:翻车|塌房|洗白|卖惨|双标|装无辜)/, 2.6, '开篇直接给事件或当事人负面定性'),
-  ],
-  支持: [
-    feature(/^(?:能|会|可以|当然|肯定|值得|确实如此)(?=[，。,、！？!?])/, 2.8, '开头直接肯定判词'),
-  ],
-  解构: [
-    feature(/^(?:先说结论|结论先行|这个问题问反了|问题本身就有问题)|抛开.{0,4}事实不谈/, 1.6, '元评论开篇说明回答要重设问题框架'),
-  ],
-  中立: [
-    feature(/(?:没有|无)(?:什么)?争议/, 2.8, '开篇自陈无争议是明确的不站队表态'),
-  ],
 };
 
 // 策略词典分组围绕“回答靠什么说服人”，权威、数据、叙事、情绪、身份和机锋应彼此竞争。
 const STRATEGY_FEATURES = {
   数据论证: [
-    // 裸数字/裸量级词不计分（spec 2.2 方案 B）：历史、财经类长文天然数字密集，
-    // 把数字密度当绝对阈值会让整缸 10/10 全判数据论证。
-    // 数字必须与论证性连接词同句出现才计分，见 addDerivedSignals 里的 gated 信号。
-    feature(/[一二三四五六七八九十\d]+[、.．]/g, 1.5, '编号列点说明回答在结构化归因'),
+    feature(/\d+(?:\.\d+)?%?/g, 0.9, '数字密度是算账型回答的主要表层信号'),
+    feature(/[一二三四五六七八九十\d]+[、.．]/g, 1.2, '编号列点说明回答在结构化归因'),
+    feature(/[万亿倍元]/g, 0.35, '金额量级词会加强数据论证感'),
     feature(/月薪\s*\d+/g, 2.2, '薪资数字通常服务于算账'),
     feature('数据显示', 2.8, '直接引用数据'),
     feature('统计', 2.4, '数据来源或统计口吻'),
@@ -212,8 +177,6 @@ const STRATEGY_FEATURES = {
     feature('降降温', 1.8, '轻巧口语收尾'),
     feature('就这么简单', 1.9, '短促断言形成机锋'),
     feature('遥遥领先', 2.4, '社媒梗词'),
-    feature(/(?:笑死|笑不活了?|绷不住了)/g, 2.4, '口语笑场标记说明语境在玩梗而非严肃论证'),
-    feature('了说是', 2.2, '阴阳怪气式转述句尾，常见于甩梗回答'),
     feature(/[（(][^）)]{2,24}[）)]/g, 1.4, '括号吐槽强化机锋感'),
   ],
 };
@@ -238,9 +201,6 @@ export function annotateOne(question, item, ctx = {}) {
   applyQuestionPrior(questionType, stanceScores);
   // 反讽必须依赖组合语境；单个梗词容易只是普通口语，两个以上信号才允许它参与竞争。
   if ((stanceScores.hits.反讽 || []).length < 2) stanceScores.scores.反讽 = 0;
-  // 首句判词在先验衰减之后单独计入：why/howto 的 0.55 衰减针对的是全文密度类特征，
-  // 开头判词是位置信号，「为什么…」型问题下的回答同样可能以判词开篇，不该被衰减到失效。
-  scoreOpeningVerdicts(stanceText, stanceScores);
   applyMutualExclusion(strategyScores);
 
   const stancePick = pickWinner(stanceScores.scores, '中立', 1.15);
@@ -250,28 +210,17 @@ export function annotateOne(question, item, ctx = {}) {
 
   const stanceConf = confidenceFor(stancePick, stanceScores.hits[stance] || []);
   const strategyConf = confidenceFor(strategyPick, strategyScores.hits[strategy] || []);
-  // 策略侧零证据（纯兜底、topScore 为 0）时不参与 confidence 取小：
-  // 「没有策略意见」不等于「立场也不可信」。否则真中立和所有带明确判词的回答
-  // 都会被拖到 0，spec 2.3 要求的正向中立置信度形同虚设。
-  const confidence = round3(strategyPick.topScore === 0 ? stanceConf : Math.min(stanceConf, strategyConf));
-  // 立场是否可信只看立场侧的证据强度：策略没识别出来（比如一句话短回答没有任何策略特征，
-  // strategy 落入兜底类、置信度为 0）不该把明确的立场表态一起抹成中立 ——
-  // 立场与策略是两个独立维度，之前的 min 耦合正是「立场退化」告警的另一半机制。
-  const stanceLowEvidence = stanceConf < 0.15;
-  // 但 why/howto 型问题保持旧的保守耦合：归因/方法类回答里的否定词大多在陈述而非表态，
-  // 立场信号本来就弱；当策略侧也完全零证据（落入兜底类）时，整条回答没有任何
-  // 可锚定的表层信号，此时的立场表态不可信，退回中立。
-  const adversarialType = questionType.type === 'why' || questionType.type === 'howto';
-  const stanceUnanchored = adversarialType && strategyPick.topScore === 0;
+  const confidence = round3(Math.min(stanceConf, strategyConf));
+  const lowConfidence = confidence < 0.15;
 
-  if (stanceLowEvidence || stanceUnanchored) stance = '中立';
+  if (lowConfidence) stance = '中立';
 
   return {
     stance,
     strategy,
     confidence,
     evidence: {
-      stance: stanceLowEvidence || stanceUnanchored ? [{ term: '特征不足', weight: 0 }] : topEvidence(stanceScores.hits[stance] || []),
+      stance: lowConfidence ? [{ term: '特征不足', weight: 0 }] : topEvidence(stanceScores.hits[stance] || []),
       strategy: topEvidence(strategyScores.hits[strategy] || []),
     },
   };
@@ -360,34 +309,6 @@ function findMatches(pattern, text) {
   return [...text.matchAll(source)].map((match) => match[0]);
 }
 
-// 开头一小段 = 前 30 个字符或第一个句末标点之前，以先到者为准。
-// 判词只有落在这一段里才是「开篇表态」；散落在论证中段同样的词只是叙述。
-function openingSegment(text) {
-  const head = [...String(text || '')].slice(0, 30).join('');
-  const sentence = head.match(/^[^。！？!?\n]*[。！？!?]/);
-  return sentence ? sentence[0] : head;
-}
-
-function scoreOpeningVerdicts(stanceText, stanceScores) {
-  const opening = openingSegment(stanceText);
-  if (!opening) return;
-  for (const [label, features] of Object.entries(OPENING_VERDICT_FEATURES)) {
-    for (const { pattern, weight, note } of features) {
-      const matches = findMatches(pattern, opening);
-      if (!matches.length) continue;
-      const contribution = round3(weight * matches.length);
-      stanceScores.scores[label] = round3(stanceScores.scores[label] + contribution);
-      stanceScores.hits[label].push({ term: matches.join(' / '), weight: contribution, note });
-    }
-  }
-  // 开篇即反问句（「难道…？」「…到了什么样的程度？」）通常隐含对题干或常识立场的否定，
-  // 是较弱信号所以权重低于直接判词；只认带挑战语气的疑问词，纯咨询式问句不算。
-  const firstSentence = stanceText.match(/^[^。！？!?\n]*[？?]/);
-  if (firstSentence && /难道|凭什么|怎么会|什么样|有什么用|有何意义|何苦|你觉得呢/.test(firstSentence[0])) {
-    addHit(stanceScores, '反对', firstSentence[0].trim(), 1.5);
-  }
-}
-
 function addDerivedSignals(stanceText, strategyText, stanceScores, strategyScores) {
   const lengthBase = Math.max(1, [...stanceText].length / 100);
   const negationDensity = (stanceText.match(/[不没别无]/g) || []).length / lengthBase;
@@ -417,35 +338,6 @@ function addDerivedSignals(stanceText, strategyText, stanceScores, strategyScore
 
   if (/(心薪|薪心|班味|卷王|摸鱼)/.test(strategyText)) {
     addHit(strategyScores, '抖机灵', strategyText.match(/心薪|薪心|班味|卷王|摸鱼/)?.[0] || '谐音/双关', 2.2);
-  }
-
-  // 数据论证门槛（spec 2.2 方案 B）：数字必须与论证性连接词同句出现才计分。
-  // 历史/财经类长文天然数字密集，裸数字密度会让「清朝人口」这种缸 10/10 全判数据论证；
-  // 「数字 + 比较/统计/换算类连接词」才把数字锚定到论证行为上，单纯报年份、报数量不算。
-  const CONNECTIVE = /因此|占比|相比|比较|增长|下降|减少|锐减|激增|提升|超过|达到|约为|大约|将近|接近|相当于|平均|统计|换算|低于|高于|足足|仅有|只有|翻倍|率/;
-  const clauses = strategyText.split(/[。！？!?\n；;]+/).map((s) => s.trim()).filter(Boolean);
-  const gated = [];
-  for (const clause of clauses) {
-    if (gated.length >= 2) break;
-    if (/\d/.test(clause) && CONNECTIVE.test(clause)) gated.push(clause.slice(0, 18));
-  }
-  if (gated.length) {
-    addHit(strategyScores, '数据论证', gated.join(' / '), round3(2.4 * gated.length));
-  }
-
-  // 多轮「XX：」对话体是实录转写，属于叙事而非数据罗列 ——
-  // 对话里出现的数字（营业时间、时长）是引语内容，不构成数据论证。
-  const speakerTurns = strategyText.match(/[一-龥A-Za-z]{1,6}[:：]/g) || [];
-  if (speakerTurns.length >= 3) {
-    addHit(strategyScores, '故事叙事', speakerTurns.slice(0, 4).join(' / '), 3);
-  }
-
-  // 判词式超短回答（开头直接给结论、全文一两句话收尾）是知乎典型的甩观点机锋体裁，
-  // 没有数据也没有叙事，归入抖机灵比落入兜底类更贴近真实说服方式。
-  const opening = openingSegment(stanceText);
-  const opensWithVerdict = /^(?:不太?(?:能|会|行)|不能|不会|不行|不可以|不至于|没(?:有)?(?:意义|用|必要)|不可能|难说|很难|难以)/.test(opening);
-  if (opensWithVerdict && [...strategyText].length <= 80) {
-    addHit(strategyScores, '抖机灵', opening, 2.4);
   }
 }
 
