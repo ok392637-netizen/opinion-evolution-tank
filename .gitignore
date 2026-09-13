@@ -4,3 +4,6 @@ dist/
 .env
 app/server/.env
 app/server/data/eco-cache.json
+# 凭证备份（含 Access Secret 明文，绝不入库）
+.env.bak.*
+**/.env.bak.*
