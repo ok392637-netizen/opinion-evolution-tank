@@ -22,11 +22,11 @@ function authHeaders() {
   };
 }
 
-async function request(url, options = {}, { fetchImpl = fetch, timeoutMs = TIMEOUT_MS } = {}) {
+async function request(url, options = {}) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
-    const res = await fetchImpl(url, { ...options, signal: controller.signal });
+    const res = await fetch(url, { ...options, signal: controller.signal });
     const text = await res.text();
     let body;
     try {
@@ -65,90 +65,33 @@ export function dedup(key, fn) {
 // 生态缸缓存磁盘持久化：服务重启不丢已消耗额度换来的数据
 const CACHE_DIR = path.join(__dirname, '..', 'data');
 const CACHE_FILE = path.join(CACHE_DIR, 'eco-cache.json');
-const PREBUILT_FILE = 'prebuilt-tanks.json';
 const CACHE_MAX_ENTRIES = 100;
 
-// 测试和预构建脚本必须使用临时目录，路径集中在这里可以避免误写真实 eco-cache。
-function cachePaths(dataDir = CACHE_DIR) {
-  return {
-    cacheDir: dataDir,
-    cacheFile: path.join(dataDir, 'eco-cache.json'),
-    prebuiltFile: path.join(dataDir, PREBUILT_FILE),
-  };
-}
-
-// 缓存文件允许不存在或损坏，启动路径需要优雅降级到空缓存而不是阻断服务。
-function readJsonArray(file) {
+export function loadEcoCache() {
   try {
-    if (!fs.existsSync(file)) return [];
-    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-// 缸是否“已就绪”只看本地标注产物（question + 非空 species）；AI 叙事是可选增强，
-// 缺失不应让整缸失效——常规缓存的新鲜度由 TTL 负责，预构建缸永久有效。
-export function isEcoCacheEntryReady(entry) {
-  const data = entry?.data || entry;
-  return Boolean(data?.question && Array.isArray(data?.species) && data.species.length > 0);
-}
-
-// 前端徽标只需要轻量清单，避免把完整回答和 AI 文本通过列表接口重复传输。
-export function listReadyTanks() {
-  const seen = new Set();
-  const ready = [];
-  for (const entry of ecoCache.values()) {
-    if (!isEcoCacheEntryReady(entry)) continue;
-    const data = entry.data || entry;
-    const key = `${data.question}|${data.questionUrl || data.url || ''}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    ready.push({
-      question: data.question,
-      url: data.questionUrl || data.url || '',
-      speciesCount: data.species.length,
-    });
-  }
-  return ready;
-}
-
-export function loadEcoCache({ dataDir = CACHE_DIR } = {}) {
-  try {
-    const { cacheFile, prebuiltFile } = cachePaths(dataDir);
-    const arr = readJsonArray(cacheFile);
+    if (!fs.existsSync(CACHE_FILE)) return;
+    const arr = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
     for (const { k, ts, data } of arr) {
       if (Date.now() - ts < ECO_TTL) ecoCache.set(k, { data, ts });
-    }
-    // 预构建缸来自赛前额度消耗，价值不应被 24h TTL 清掉；只要内容已就绪就永久恢复到内存缓存。
-    for (const { k, ts, data } of readJsonArray(prebuiltFile)) {
-      if (isEcoCacheEntryReady(data)) ecoCache.set(k, { data, ts, prebuilt: true });
     }
   } catch {
     // 缓存文件损坏不影响服务
   }
 }
 
-export function persistEcoCacheEntry(key, data, { dataDir = CACHE_DIR } = {}) {
+export function persistEcoCacheEntry(key, data) {
   try {
-    const { cacheDir, cacheFile } = cachePaths(dataDir);
-    if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
-    const entries = readJsonArray(cacheFile);
-    const merged = [{ k: key, ts: Date.now(), data }, ...entries.filter((e) => e.k !== key)];
-    // 带 AI 叙事的条目消耗过真实直答额度，裁剪时永远保留在 100 条上限之外；
-    // 普通条目仍按 CACHE_MAX_ENTRIES 封顶，防止缓存文件无限膨胀。
-    const next = [];
-    let plainCount = 0;
-    for (const entry of merged) {
-      if (entry?.data?.aiNarrative) {
-        next.push(entry);
-      } else if (plainCount < CACHE_MAX_ENTRIES) {
-        next.push(entry);
-        plainCount += 1;
+    if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
+    const entries = [];
+    if (fs.existsSync(CACHE_FILE)) {
+      try {
+        entries.push(...JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')));
+      } catch {
+        // 忽略旧文件
       }
     }
-    fs.writeFileSync(cacheFile, JSON.stringify(next), 'utf8');
+    const next = [{ k: key, ts: Date.now(), data }, ...entries.filter((e) => e.k !== key)].slice(0, CACHE_MAX_ENTRIES);
+    fs.writeFileSync(CACHE_FILE, JSON.stringify(next), 'utf8');
   } catch {
     // 磁盘写入失败不影响内存缓存
   }
@@ -182,22 +125,18 @@ export function zhidaCount() {
 }
 
 const quotaCache = { remaining: null, ts: 0 };
-async function zhidaRemaining(force = false, { fetchImpl } = {}) {
-  const canUseCache = !fetchImpl;
-  if (canUseCache && !force && quotaCache.remaining !== null && Date.now() - quotaCache.ts < 60 * 1000) {
+async function zhidaRemaining(force = false) {
+  if (!force && quotaCache.remaining !== null && Date.now() - quotaCache.ts < 60 * 1000) {
     return quotaCache.remaining;
   }
   try {
     const body = await request(`${BASE}/api/v1/quota?APIIDs=zhida_openai`, {
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-    }, { fetchImpl });
+    });
     const item = (body?.Data || []).find((d) => d.APIID === 'zhida_openai');
-    const remaining = item ? Number(item.RemainingQuota) : null;
-    if (canUseCache) {
-      quotaCache.remaining = remaining;
-      quotaCache.ts = Date.now();
-    }
-    return remaining;
+    quotaCache.remaining = item ? Number(item.RemainingQuota) : null;
+    quotaCache.ts = Date.now();
+    return quotaCache.remaining;
   } catch {
     return null; // 查询失败不阻断，交给本地计数兜底
   }
@@ -292,12 +231,12 @@ export async function searchZhihu(query, count = 10) {
   return data;
 }
 
-export async function zhidaChat(model, messages, { timeoutMs = 60000, fetchImpl } = {}) {
+export async function zhidaChat(model, messages, { timeoutMs = 60000 } = {}) {
   if (!hasSecret()) throw Object.assign(new Error('未配置 Access Secret'), { code: 'NO_SECRET' });
   if (zhidaCount() >= ZHIDA_DAILY_LIMIT) {
     throw Object.assign(new Error('今日直答额度已用尽（本地守卫）'), { code: 'QUOTA_GUARD' });
   }
-  const remaining = await zhidaRemaining(false, { fetchImpl });
+  const remaining = await zhidaRemaining();
   if (remaining !== null && remaining <= 0) {
     throw Object.assign(new Error('今日直答额度已用尽（服务端确认）'), { code: 'QUOTA_GUARD' });
   }
@@ -305,8 +244,7 @@ export async function zhidaChat(model, messages, { timeoutMs = 60000, fetchImpl 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    // 直答额度今日已耗尽，调用点必须能注入 fake HTTP；这样测试能覆盖真实协议而不会误烧线上额度。
-    const res = await (fetchImpl || fetch)(`${BASE}/v1/chat/completions`, {
+    const res = await fetch(`${BASE}/v1/chat/completions`, {
       method: 'POST',
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       signal: controller.signal,
@@ -330,10 +268,10 @@ export async function zhidaChat(model, messages, { timeoutMs = 60000, fetchImpl 
   }
 }
 
-export async function fetchQuota({ fetchImpl } = {}) {
+export async function fetchQuota() {
   const body = await request(`${BASE}/api/v1/quota`, {
     headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-  }, { fetchImpl });
+  });
   return body?.Data || [];
 }
 

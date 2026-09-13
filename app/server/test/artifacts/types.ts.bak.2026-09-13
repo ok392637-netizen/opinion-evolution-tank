@@ -21,13 +21,7 @@ export interface Species {
   stance: Stance;
   strategy: Strategy;
   summary: string;
-  // 区分本地命中、预设演示与缺失标签，让 UI 能如实说明判断来源。
-  annotationSource: 'local-heuristic' | 'demo' | 'none';
-  confidence: number;
-  evidence: {
-    stance: { term: string; weight: number }[];
-    strategy: { term: string; weight: number }[];
-  };
+  annotationSource: 'ai' | 'demo' | 'none';
 }
 
 export interface Ecosystem {
@@ -38,13 +32,6 @@ export interface Ecosystem {
   createdAt: number;
   species: Species[];
   narrative: string;
-  // 原文独立于解析结果，格式漂移时前端仍能展示已取得的解说。
-  aiNarrative: string | null;
-  aiNarrativeSource: string | null;
-  aiNarrativeError?: string;
-  annotationWarning?: string | null;
-  aiFactions: { name: string; claim: string; persuasion: string }[] | null;
-  aiDominant: string | null;
   cached?: boolean;
   note?: string;
 }
@@ -61,9 +48,7 @@ export interface ReleaseReport {
   attractComments: string[];
   hybridAdvice: string[];
   narrative: string;
-  // AI 只追加文字点评，来源值不能再暗示它参与数值概率计算。
-  analysisSource: 'rule+local' | 'rule+local+ai' | 'rule-only-demo';
-  aiComment: string | null;
+  analysisSource: 'ai+rule' | 'rule-only' | 'rule-only-demo';
   simulatedAt: number;
 }
 

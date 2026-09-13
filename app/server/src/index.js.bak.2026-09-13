@@ -6,18 +6,13 @@ import express from 'express';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { hasSecret, fetchHot, fetchQuota, zhidaCount, hashKey, ecoCache, ECO_TTL, loadEcoCache, persistEcoCacheEntry, listReadyTanks, dedup } from './zhihu.js';
-import { buildEcosystem, analyzeRelease, refreshLocalAnnotations } from './ecosystem.js';
-import { annotateOne } from './annotator.js';
+import { hasSecret, fetchHot, fetchQuota, zhidaCount, hashKey, ecoCache, ECO_TTL, loadEcoCache, persistEcoCacheEntry, dedup } from './zhihu.js';
+import { buildEcosystem, analyzeRelease } from './ecosystem.js';
 import { survivalRule } from './ruleModel.js';
 import { demoHot, demoEcosystem } from './demoData.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 8787;
-
-// 测试通过 TANK_DATA_DIR 注入临时数据目录，避免读写真实缓存；缺省走真实 data/。
-const TANK_DATA_DIR = process.env.TANK_DATA_DIR || null;
-const dataDirOpts = () => (TANK_DATA_DIR ? { dataDir: TANK_DATA_DIR } : {});
 
 // 读取可选 .env（无 dotenv 依赖，保持零轮子）
 const envPath = path.join(__dirname, '..', '.env');
@@ -34,7 +29,7 @@ app.use(express.json({ limit: '1mb' }));
 const live = () => hasSecret();
 
 // 启动时恢复磁盘缓存（服务重启不丢已消耗额度换来的数据）
-loadEcoCache(dataDirOpts());
+loadEcoCache();
 
 // 放生分析缓存：同一问题+同一草稿 1 小时内复用，防误触重复消耗直答
 const releaseCache = new Map();
@@ -63,33 +58,24 @@ app.get('/api/hot', async (req, res) => {
   }
 });
 
-// 评委入口：列出当前可直接展示的缸（含永久预构建缸），无需任何凭证。
-app.get('/api/tanks', (req, res) => {
-  res.json(listReadyTanks());
-});
-
 app.post('/api/ecosystem', async (req, res) => {
   const question = String(req.body?.question || '').trim().slice(0, 120);
   const questionUrl = String(req.body?.url || '').trim().slice(0, 200);
   if (!question) return res.status(400).json({ error: '请提供问题标题' });
 
-  // 缓存检查必须先于演示降级：预构建缸是赛前花额度换来的永久资产，
-  // 不受 24h TTL 限制，无凭证时也必须可复用。
-  const key = hashKey(question + '|' + questionUrl);
-  const hit = ecoCache.get(key);
-  if (hit && (hit.prebuilt || Date.now() - hit.ts < ECO_TTL)) {
-    // 旧缓存里的物种可能是重构前的全灰标签；只在内存重标，不回写磁盘。
-    return res.json({ ...refreshLocalAnnotations(hit.data), cached: true });
-  }
-
   if (!live()) return res.json(demoEcosystem(question));
 
+  const key = hashKey(question + '|' + questionUrl);
+  const hit = ecoCache.get(key);
+  if (hit && Date.now() - hit.ts < ECO_TTL) {
+    return res.json({ ...hit.data, cached: true });
+  }
   try {
     // dedup：并发同请求只构建一次
     const data = await dedup(`eco:${key}`, () => buildEcosystem(question, questionUrl));
     if (data.species.length > 0) {
       ecoCache.set(key, { data, ts: Date.now() });
-      persistEcoCacheEntry(key, data, dataDirOpts());
+      persistEcoCacheEntry(key, data);
     }
     res.json(data);
   } catch (e) {
@@ -111,15 +97,12 @@ app.post('/api/release', async (req, res) => {
   }
 
   if (!live()) {
-    // 演示模式：规则模型 + 本地启发式标注（可解释、零额度消耗）。
-    // 草稿的立场/策略必须与 live 路径同源（annotator），否则演示和真实结果会对不上；
-    // 只是不调用直答，aiComment 恒为 null。
-    const annotation = annotateOne(question, { excerpt: draft });
-    const rule = survivalRule(species, annotation);
+    // 演示模式：直接用规则模型（可解释、零额度消耗）
+    const rule = survivalRule(species, { stance: '中立', strategy: '数据论证' });
     const report = {
-      stance: annotation.stance,
-      strategy: annotation.strategy,
-      summary: '（演示模式：规则模型 + 本地启发式标注结果）',
+      stance: rule.stance,
+      strategy: rule.strategy,
+      summary: '（演示模式：规则模型结果）',
       survivalProbability: rule.probability,
       ruleProbability: rule.probability,
       aiProbability: null,
@@ -128,7 +111,6 @@ app.post('/api/release', async (req, res) => {
       attractComments: ['（演示数据）这条说到点子上了', '（演示数据）建议补充数据来源'],
       hybridAdvice: rule.advice,
       narrative: rule.narrative,
-      aiComment: null,
       analysisSource: 'rule-only-demo',
       simulatedAt: Date.now(),
     };
