@@ -6,8 +6,8 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // 本 worktree 的后端跑在 8788（主仓是 8787），spec 明确允许且必须改这一处
-      '/api': 'http://localhost:8788',
+      // 开发模式下把 /api 代理到本地服务端（生产由 Express 直接托管 dist，无需代理）
+      '/api': 'http://localhost:8787',
     },
   },
 });
