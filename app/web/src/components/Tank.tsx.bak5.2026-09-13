@@ -53,8 +53,7 @@ const AUTHORITY_STROKE = [1, 1.4, 2, 2.8];
 // ---------- 生存策略符号（第三维编码） ----------
 // 14×14 纯描边极简符号，替代原来圆下方的一行小字：
 // 10 个节点 = 10 行小字的视觉噪音被压缩成圆内图形。
-// 导出给「我的观点画像」页复用（spec 3.4：画像页与生态缸用同一套策略符号）
-export function StrategyGlyph({ s, x, y, color }: { s: Strategy; x: number; y: number; color: string }) {
+function StrategyGlyph({ s, x, y, color }: { s: Strategy; x: number; y: number; color: string }) {
   const line = {
     stroke: color,
     strokeWidth: 1.3,

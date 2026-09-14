@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
-import type { Ecosystem, EnvParams, OAuthStatus, ReleaseReport, Species } from './types';
+import type { Ecosystem, EnvParams, ReleaseReport, Species } from './types';
 import { HotBoard } from './components/HotBoard';
 import type { HotMeta } from './components/HotBoard';
 import { Tank } from './components/Tank';
 import { Workspace } from './components/Workspace';
-import { ProfileView } from './components/ProfileView';
 import { classifyQuestion, isExplanationType } from './lib/questionType';
 
 // 采集时间统一短格式：徽标空间只有一行，完整 locale 串会顶破顶栏
@@ -14,36 +13,15 @@ const fmtCollected = (ts?: number) =>
 
 export default function App() {
   const [status, setStatus] = useState<{ liveMode: boolean } | null>(null);
-  const [view, setView] = useState<'board' | 'tank' | 'profile'>('board');
+  const [view, setView] = useState<'board' | 'tank'>('board');
   const [eco, setEco] = useState<Ecosystem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   // 热榜来源元信息由 HotBoard 上报，顶栏三态徽标需要它区分 实时/缓存/快照（spec 第 7 节）
   const [hotMeta, setHotMeta] = useState<HotMeta | null>(null);
-  // OAuth 授权态：profile 只有展示字段（昵称/头像），token 永远不下发前端
-  const [oauth, setOauth] = useState<OAuthStatus | null>(null);
-  const [oauthNotice, setOauthNotice] = useState('');
 
   useEffect(() => {
     api.status().then(setStatus).catch(() => setStatus({ liveMode: false }));
-    api.oauthStatus().then(setOauth).catch(() => setOauth(null));
-    // 从知乎授权页跳回来时 URL 带 ?oauth=ok/err（服务端 302 回来的），
-    // 消费掉这个一次性标记：展示结果、清掉参数，避免刷新后提示复读
-    const flag = new URLSearchParams(window.location.search).get('oauth');
-    if (flag) {
-      setOauthNotice(flag === 'ok' ? '知乎账号授权成功' : '授权未完成，请重试');
-      if (flag === 'ok') setView('profile');
-      window.history.replaceState(null, '', window.location.pathname);
-      // 回调刚写完会话，重新拉一次授权态而不是用首屏的旧值
-      api.oauthStatus().then(setOauth).catch(() => {});
-    }
-  }, []);
-
-  const logout = useCallback(async () => {
-    await api.oauthLogout().catch(() => {});
-    // 登出后回到选题台：画像数据已随会话失效，留在画像页只会渲染出 401
-    setView('board');
-    setOauth(await api.oauthStatus().catch(() => null));
   }, []);
 
   // 数据来源徽标三态（诚信要求）：「真实数据的历史缓存」和「虚构的演示数据」是两回事，
@@ -94,29 +72,19 @@ export default function App() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          {view !== 'board' && (
+          {view === 'tank' && (
             <button className="backlink" onClick={() => setView('board')}>
               ← 返回选题台
             </button>
           )}
-          {/* 「我的观点画像」与 board/tank 平级的第三个视图入口 */}
-          {view !== 'profile' && (
-            <button className="backlink" onClick={() => setView('profile')}>
-              我的观点画像
-            </button>
-          )}
-          <OAuthArea oauth={oauth} onLogout={logout} />
           <span className={`source-badge ${badge.cls}`}>{badge.text}</span>
         </div>
       </header>
 
-      {oauthNotice && <div className="oauth-notice">{oauthNotice}</div>}
       {error && <div className="err" style={{ marginBottom: 14 }}>{error}</div>}
 
       {view === 'board' ? (
         <HotBoard liveMode={status?.liveMode ?? false} loading={loading} onOpen={openTank} onMeta={setHotMeta} />
-      ) : view === 'profile' ? (
-        <ProfileView oauth={oauth} />
       ) : eco ? (
         <TankView eco={eco} onOpen={openTank} />
       ) : null}
@@ -126,40 +94,6 @@ export default function App() {
         时间轴为 AI 演化重建，放生结果为 AI 模拟预测，均非知乎平台历史数据
       </p>
     </div>
-  );
-}
-
-// 顶栏授权区三态：未配回调（禁用 + 可见说明）/ 未授权（可点击跳转知乎）/ 已授权（头像昵称 + 退出）。
-// 授权跳转必须是整页 302（window.location），不能用 fetch 代发——
-// 最终确认页在知乎域名下，必须由用户本人亲自点击。
-function OAuthArea({ oauth, onLogout }: { oauth: OAuthStatus | null; onLogout: () => void }) {
-  if (!oauth) return null;
-  if (oauth.authorized) {
-    return (
-      <span className="oauth-user">
-        {oauth.profile?.avatarUrl && <img className="oauth-avatar" src={oauth.profile.avatarUrl} alt="" />}
-        <span className="oauth-name">{oauth.profile?.name || '已授权知乎账号'}</span>
-        <button className="backlink" onClick={onLogout}>
-          退出
-        </button>
-      </span>
-    );
-  }
-  if (!oauth.callbackConfigured) {
-    // 部署前本地预览态：按钮禁用并给出文字说明（tooltip 截图和触屏都看不到，文案必须落在页面上）
-    return (
-      <span className="oauth-user">
-        <button className="oauth-btn" disabled title="等待部署后开放">
-          授权知乎账号
-        </button>
-        <span className="oauth-hint">等待部署后开放</span>
-      </span>
-    );
-  }
-  return (
-    <button className="oauth-btn" onClick={() => (window.location.href = '/api/oauth/start')}>
-      授权知乎账号
-    </button>
   );
 }
 

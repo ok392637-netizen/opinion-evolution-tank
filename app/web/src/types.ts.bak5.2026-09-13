@@ -74,53 +74,6 @@ export interface HotItem {
   thumbnail: string;
 }
 
-// ---- 知乎 OAuth + 我的观点画像（2026-09-13 新增，既有字段未动）----
-
-// 前端能看到的只有授权态布尔值与展示用 profile；app_key / token 永远不会出现在这里
-export interface OAuthProfile {
-  name: string | null;
-  avatarUrl: string | null;
-  headline: string | null;
-  url: string | null;
-}
-
-export interface OAuthStatus {
-  configured: boolean; // app_key + Access Secret + 回调地址三者齐备
-  callbackConfigured: boolean; // 仅回调地址已配置（决定授权按钮是否可点）
-  authorized: boolean;
-  appId: string | null;
-  redirectUri: string | null;
-  profile: OAuthProfile | null;
-  stateVerified: boolean | null; // 回调是否带了 state（实测可能不带，必须如实展示）
-  expiresAt: string | null;
-  error: { code: string; message: string } | null;
-}
-
-export interface ProfileSample {
-  title: string;
-  url: string;
-  stance: Stance;
-  strategy: Strategy;
-  confidence: number;
-  evidence: {
-    stance: { term: string; weight: number }[];
-    strategy: { term: string; weight: number }[];
-  };
-}
-
-// GET /api/profile/species 的响应：用户本人的观点物种画像
-export interface SpeciesProfile {
-  total: number; // 实际分析的条数；0 = 公开创作不足，不是错误
-  dominantStrategy: Strategy | null;
-  dominantStance: Stance | null;
-  strategyDist: Record<Strategy, number>;
-  stanceDist: Record<Stance, number>;
-  samples: ProfileSample[];
-  unidentified: number; // 没识别出显著策略的条数（兜底标签不计入分布）
-  analyzedAt: number;
-  cached?: boolean;
-}
-
 export interface EnvParams {
   rankMode: 'votes' | 'recent';
   climate: 'rational' | 'emotional';

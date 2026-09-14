@@ -11,8 +11,6 @@ import { buildEcosystem, analyzeRelease, refreshLocalAnnotations } from './ecosy
 import { annotateOne } from './annotator.js';
 import { survivalRule } from './ruleModel.js';
 import { demoHot, demoEcosystem } from './demoData.js';
-import { createOAuth } from './oauth.js';
-import { buildSpeciesProfile } from './speciesProfile.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 8787;
@@ -155,90 +153,6 @@ app.get('/api/quota', async (req, res) => {
     res.json({ liveMode: true, items: await fetchQuota() });
   } catch (e) {
     res.status(502).json({ error: `额度查询失败：${e.message}` });
-  }
-});
-
-// ---------- 知乎 OAuth + 我的观点画像 ----------
-// 协议行为以官方黑客松参考实现（hello-world-oauth）为准，见 src/oauth.js 头部注释。
-// app_id 是公开标识可以下发前端；app_key / Access Secret / OAuth token 只存进程内存，
-// 任何路由的响应体都不携带它们（status 只回「是否配置」级别的布尔与展示用 profile）。
-const oauth = createOAuth({
-  oauth: {
-    appId: process.env.ZHIHU_OAUTH_APP_ID || '',
-    // 留空 = 尚未部署登记回调：start 会拒绝跳转，前端按钮置灰「等待部署后开放」，
-    // 绝不把 localhost 当成可用回调地址
-    redirectUri: (process.env.ZHIHU_OAUTH_REDIRECT_URI || '').trim(),
-  },
-});
-
-// 画像结果按会话缓存 30 分钟：user_data 额度虽充裕（1000/日）也没理由让评委
-// 每点一次就烧一次真实请求；缓存在登出时立即失效。
-const profileCache = new Map(); // sessionId → { data, ts }
-const PROFILE_TTL = 30 * 60 * 1000;
-
-// OAuth 相关响应一律 no-store：授权态是会话私有的，不能被共享缓存复用
-const noStore = (res) => res.set('Cache-Control', 'no-store');
-
-app.get('/api/oauth/status', async (req, res) => {
-  noStore(res);
-  res.json(await oauth.status(req, res));
-});
-
-app.get('/api/oauth/start', async (req, res) => {
-  noStore(res);
-  try {
-    res.redirect(302, await oauth.start(req, res));
-  } catch (e) {
-    oauth.record(req, res, e);
-    // 未配回调是「部署未完成」而非授权失败：返回 409 让前端停在原页并解释原因，
-    // 其余错误才按参考实现跳回首页带错误标记
-    if (e.code === 'DEPLOYMENT_REQUIRED') {
-      return res.status(409).json({ error: e.message, code: e.code });
-    }
-    res.redirect(302, '/?oauth=err');
-  }
-});
-
-// 路由陷阱：知乎回调路径不带 /api 前缀，必须注册在 SPA fallback（下面的
-// app.get(/^(?!\/api\/).*/)）之前，否则会被 catch-all 吃掉返回 index.html。
-app.get('/auth/callback', async (req, res) => {
-  noStore(res);
-  try {
-    await oauth.callback(req, res, new URL(req.originalUrl, `http://${req.headers.host || 'localhost'}`));
-    res.redirect(302, '/?oauth=ok');
-  } catch (e) {
-    oauth.record(req, res, e);
-    res.redirect(302, '/?oauth=err');
-  }
-});
-
-app.post('/api/oauth/logout', (req, res) => {
-  noStore(res);
-  const sid = oauth.sessionId(req, res);
-  oauth.logout(req, res);
-  profileCache.delete(sid); // 登出即作废画像缓存，避免下个使用者看到上一个人的结果
-  res.json({ ok: true });
-});
-
-// 核心功能：「我的观点画像」——读授权用户自己的创作，用同一套 annotator 分析他的物种
-app.get('/api/profile/species', async (req, res) => {
-  noStore(res);
-  const sid = oauth.sessionId(req, res);
-  const hit = profileCache.get(sid);
-  if (hit && Date.now() - hit.ts < PROFILE_TTL) {
-    return res.json({ ...hit.data, cached: true });
-  }
-  try {
-    const contents = await oauth.fetchUserContents(req, res);
-    // 空创作（新号/无公开内容）是正常结果不是错误：total: 0 原样下发，前端展示空态
-    const data = buildSpeciesProfile(contents);
-    profileCache.set(sid, { data, ts: Date.now() });
-    res.json(data);
-  } catch (e) {
-    if (e.code === 'LOGIN_REQUIRED' || e.code === 'TOKEN_EXPIRED') {
-      return res.status(401).json({ error: e.message, code: e.code });
-    }
-    res.status(502).json({ error: `读取知乎创作失败：${e.message}`, code: e.code });
   }
 });
 

@@ -1,4 +1,4 @@
-import type { Ecosystem, HotItem, OAuthStatus, ReleaseReport, Species, SpeciesProfile } from './types';
+import type { Ecosystem, HotItem, ReleaseReport, Species } from './types';
 
 async function json<T>(res: Response): Promise<T> {
   const body = await res.json().catch(() => ({ error: '响应解析失败' }));
@@ -36,8 +36,4 @@ export const api = {
     fetch('/api/quota').then((r) =>
       json<{ liveMode: boolean; items: { APIID: string; APIName: string; TotalQuota: number; TotalUsed: number; RemainingQuota: number }[] }>(r),
     ),
-  // ---- 知乎 OAuth（授权跳转是整页 302，不走 fetch：/api/oauth/start 直接作为链接目标）----
-  oauthStatus: () => fetch('/api/oauth/status').then((r) => json<OAuthStatus>(r)),
-  oauthLogout: () => fetch('/api/oauth/logout', { method: 'POST' }).then((r) => json<{ ok: boolean }>(r)),
-  profileSpecies: () => fetch('/api/profile/species').then((r) => json<SpeciesProfile>(r)),
 };
