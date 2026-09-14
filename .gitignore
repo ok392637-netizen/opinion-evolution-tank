@@ -9,7 +9,7 @@ app/server/data/hot-cache.json
 app/server/data/search-cache.json
 app/server/data/qa-cache.json
 # 凭证备份（含 Access Secret 明文，绝不入库）
-.env.bak.*
-**/.env.bak.*
+.env.bak*
+**/.env.bak*
 docs/dispatch/.codex-probe.txt
 docs/dispatch/*.log
